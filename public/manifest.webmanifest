@@ -1,0 +1,9 @@
+{
+  "name": "Pocket Arcade",
+  "short_name": "Arcade",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0E0F1A",
+  "theme_color": "#0E0F1A",
+  "icons": []
+}

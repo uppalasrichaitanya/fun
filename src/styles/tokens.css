@@ -1,0 +1,22 @@
+:root {
+  --bg: #0E0F1A;
+  --surface: #181A2B;
+  --surface-2: #23264A;
+  --text: #F4F1FF;
+  --muted: #9A97B8;
+  --pink: #FF4F8B;
+  --orange: #FF9F43;
+  --yellow: #FFD93D;
+  --green: #4ADE80;
+  --cyan: #38E1F5;
+  --violet: #9B7BFF;
+
+  --font-title: "Fredoka", "Trebuchet MS", system-ui, sans-serif;
+  --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --r-card: 16px;
+  --r-pill: 999px;
+  --ease-back: cubic-bezier(.34, 1.56, .64, 1);
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+}
