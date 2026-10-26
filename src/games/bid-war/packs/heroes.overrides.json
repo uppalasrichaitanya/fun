@@ -1,0 +1,18 @@
+{
+  "_note": "Fan estimates, not official data. Edit freely: any field here replaces the built pack's value (stats merge key by key). Ids are in heroes.json.",
+  "cards": {
+    "hero-149": { "rating": 76, "stats": { "STR": 45, "DUR": 70, "PWR": 55 } },
+    "hero-106": { "rating": 86, "stats": { "STR": 50, "SPD": 55, "DUR": 75, "PWR": 60 } },
+    "hero-70": { "rating": 87, "stats": { "STR": 40, "DUR": 60, "PWR": 55 } },
+    "hero-620": { "rating": 77, "stats": { "STR": 70, "SPD": 75 } },
+    "hero-107": { "rating": 70, "stats": { "STR": 25, "DUR": 40 } },
+    "hero-313": { "rating": 60, "stats": { "STR": 20, "DUR": 30, "PWR": 35 } },
+    "hero-251": { "rating": 58, "stats": { "SPD": 60, "DUR": 40, "PWR": 35 } },
+    "hero-579": { "stats": { "STR": 30, "SPD": 40 } },
+    "hero-226": { "stats": { "SPD": 40 } },
+    "hero-527": { "stats": { "STR": 10, "DUR": 30 } },
+    "hero-263": { "rating": 86, "stats": { "STR": 40, "PWR": 85 } },
+    "hero-566": { "rating": 56, "stats": { "INT": 80 } },
+    "hero-489": { "stats": { "INT": 90 } }
+  }
+}
