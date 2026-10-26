@@ -191,9 +191,12 @@ class Engine {
 
   // ---- music -------------------------------------------------------------
 
-  playMusic(spec: MusicSpec): void {
+  /** `keepPhase` swaps layers of a playing loop without restarting the bar. */
+  playMusic(spec: MusicSpec, keepPhase = false): void {
     if (this.music === spec) return;
+    const swap = keepPhase && !!this.music;
     this.music = spec;
+    if (swap) return;
     this.musicStep = 0;
     this.rate = 1;
     this.nextNote = this.ctx ? this.ctx.currentTime + 0.1 : 0;
@@ -327,7 +330,7 @@ export class AudioBus {
   ui(): void { this.tone({ f: 880, f2: 1320, type: 'sine', a: 0.002, d: 0.06, g: 0.08 }); }
 
   // ---- music -----------------------------------------------------------------
-  music(spec: MusicSpec): void { if (this.enabled) engine.playMusic(spec); }
+  music(spec: MusicSpec, keepPhase = false): void { if (this.enabled) engine.playMusic(spec, keepPhase); }
   stopMusic(): void { if (this.enabled) engine.stopMusic(); }
   musicRate(r: number): void { if (this.enabled) engine.setMusicRate(r); }
   duck(on: boolean): void { if (this.enabled) engine.duck(on); }
