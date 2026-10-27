@@ -9,7 +9,7 @@ npm install
 npm run dev        # local dev server
 npm run build      # typecheck + production build into dist/
 npm run preview    # serve dist/
-npm test           # unit tests (Bid War rules engine, pools, scoring)
+npm test           # unit tests (game logic, bots, Bid War rules engine, daily)
 npm run sim        # Bid War bot simulator; add -- --write to record results in config.ts
 npm run packs      # download Pokemon / hero artwork into public/packs/ (needs network, run once)
 ```
@@ -21,13 +21,21 @@ Deploy `dist/` to any static host (Vercel, Netlify, GitHub Pages). Asset paths a
 | Batch | Scope | State |
 | --- | --- | --- |
 | 1 | Engine, hub, shell, Stack, Draw a Perfect Circle, Odd Tile Out, Cursor Panic | Built, awaiting playtest |
-| 2 | Merge Drop, Untangle, Rocket Lander | Not started |
-| 3 | Grapple Swing, Sumo Blobs, Tiny Survivors, daily challenge, PNG share cards | Not started |
+| 2 | Merge Drop, Untangle (15 levels + endless), Rocket Lander (15 levels, all verified 3-star by autopilot) | Built, awaiting playtest |
+| 3 | Grapple Swing, Sumo Blobs, Tiny Survivors, daily challenge, PNG share cards | Built, awaiting playtest |
 | 4 | Bid War (all 6 sub-specs, 3 packs, pack scripts, bot simulator) + hub tabs | Built, awaiting playtest |
 | 5-7 | Brain Lab shared systems and its 10 games | Not started (cards on the hub) |
 
 The hub has three tabs: Arcade, Brain Lab (cards show stars earned, e.g. "27 / 90 stars"), Play Together.
 Games not built yet appear as compact "Coming soon" cards.
+
+## Daily challenge and share cards
+
+The hub's daily strip picks 3 of 10 arcade games each day (`engine/daily.ts`, #1 = 1 Jan 2026).
+Every player gets the same seed for a game on a given day (`#/game/<id>/daily`); the first finished attempt
+is official, later ones are practice. One official attempt per day keeps the streak alive.
+The game-over panel's Image button renders a 1080x1080 PNG (`shell/share-card.ts`) from the final frame;
+on touch devices it opens the share sheet, elsewhere it downloads.
 
 ## Bid War
 
@@ -55,7 +63,7 @@ The scripts use PokeAPI and the akabab Superhero API, falling back to their GitH
 
 ```
 src/
-  main.ts              hash router (#/ and #/game/<id>), service worker registration
+  main.ts              hash router (#/, #/game/<id>, #/game/<id>/daily), service worker registration
   hub/                 lobby with live attract-mode previews
   shell/               start / HUD / pause / game-over overlays, settings panel, share, confetti
   engine/
@@ -70,6 +78,7 @@ src/
     rng.ts             mulberry32 seeded RNG, string hash
     storage.ts         try/catch localStorage wrapper, keys under `pa:`
     scores.ts          best / plays / last 5 per game
+    daily.ts           daily rotation, seeds, official results, streak
     settings.ts        volume, sfx, music, reduced motion, colour-blind assist
     canvas.ts          DPR-aware (capped at 2) canvas, 'fit' letterbox or 'fill'
     glow.ts            pre-rendered additive glow sprites (no per-frame shadowBlur)

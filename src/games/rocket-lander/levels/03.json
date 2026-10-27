@@ -1,0 +1,1 @@
+{"id":3,"name":"Narrow Pad","world":"Moon","gravity":90,"w":800,"h":600,"start":{"x":120,"y":110,"vx":50,"vy":0},"terrain":[[0,480],[200,540],[360,530],[420,500],[480,500],[540,530],[800,520]],"pads":[{"x1":420,"x2":480,"y":500,"mult":3}],"hint":"Smaller pad, bigger score."}

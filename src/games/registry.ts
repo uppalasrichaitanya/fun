@@ -35,7 +35,13 @@ export interface GameMeta {
   stars?: number;
   /** Custom hub chip, e.g. "12 auctions". */
   chip?: () => string | null;
+  /** Start-screen choices (modes or levels). The chosen id reaches the game as `StartOpts.mode`. */
+  picker?: () => PickItem[];
+  /** On/off options on the start screen; enabled ones are appended to the mode as "+id". */
+  toggles?: { id: string; label: string }[];
 }
+
+export interface PickItem { id: string; label: string; sub?: string; locked?: boolean }
 
 const int = (n: number) => String(Math.round(n));
 
@@ -48,18 +54,21 @@ export const GAMES: GameMeta[] = [
   },
   {
     id: 'merge-drop', title: 'Merge Drop', tagline: "Drop. Match. Merge. Don't overflow.",
-    color: '#FF4F8B', group: 'Addictive', controls: ['mouse', 'tap'], unit: 'points',
-    canvas: 'fit', hud: 'left', format: int,
+    color: '#FF4F8B', group: 'Addictive', controls: ['mouse', 'tap', 'keys'], unit: 'points',
+    canvas: 'fit', logical: { w: 400, h: 640 }, hud: 'left', format: int,
+    load: () => import('./merge-drop'),
   },
   {
     id: 'tiny-survivors', title: 'Tiny Survivors', tagline: 'Just move. Your weapons do the rest. Survive 3 minutes.',
     color: '#9B7BFF', group: 'Addictive', controls: ['keys', 'tap'], unit: 'points',
-    canvas: 'fit', hud: 'left', format: int,
+    canvas: 'fill', hud: 'none', format: int,
+    load: () => import('./tiny-survivors'),
   },
   {
     id: 'grapple-swing', title: 'Grapple Swing', tagline: 'Hold to grab. Let go to fly.',
-    color: '#38E1F5', group: 'Addictive', controls: ['tap'], unit: 'm',
-    canvas: 'fit', hud: 'left', format: int,
+    color: '#38E1F5', group: 'Addictive', controls: ['tap', 'mouse', 'keys'], unit: 'm',
+    canvas: 'fill', hud: 'left', format: int,
+    load: () => import('./grapple-swing'),
   },
   {
     id: 'circle', title: 'Draw a Perfect Circle', tagline: 'One stroke. Around the dot. How perfect can you get?',
@@ -76,8 +85,21 @@ export const GAMES: GameMeta[] = [
   },
   {
     id: 'rocket-lander', title: 'Rocket Lander', tagline: 'Gentle. Gentler. Touchdown.',
-    color: '#FF9F43', group: 'Quick challenges', controls: ['keys', 'tap'], unit: 'stars',
-    canvas: 'fit', hud: 'left', format: int,
+    color: '#FF9F43', group: 'Quick challenges', controls: ['keys', 'tap'], unit: 'points',
+    canvas: 'fill', hud: 'none', format: int,
+    load: () => import('./rocket-lander'),
+    picker: () => {
+      const unlocked = storage.get<number>('rocket-lander:unlocked', 1);
+      const stars = storage.get<Record<string, number>>('rocket-lander:stars', {});
+      return Array.from({ length: 15 }, (_, i) => ({
+        id: String(i + 1), label: String(i + 1), locked: i + 1 > unlocked,
+        sub: stars[i + 1] ? '★'.repeat(stars[i + 1]) : undefined,
+      }));
+    },
+    chip: () => {
+      const n = Object.values(storage.get<Record<string, number>>('rocket-lander:stars', {})).reduce((a, b) => a + b, 0);
+      return n ? `${n} / 45 stars` : null;
+    },
   },
   {
     id: 'stack', title: 'Stack', tagline: 'Tap to drop. Stay perfect.',
@@ -89,7 +111,18 @@ export const GAMES: GameMeta[] = [
   {
     id: 'untangle', title: 'Untangle', tagline: 'Drag the dots until no lines cross.',
     color: '#38E1F5', group: 'Chill', controls: ['mouse', 'tap'], unit: 'level',
-    canvas: 'fill', hud: 'left', format: int,
+    canvas: 'fill', hud: 'none', format: int,
+    load: () => import('./untangle'),
+    picker: () => {
+      const unlocked = storage.get<number>('untangle:unlocked', 1);
+      const items: PickItem[] = Array.from({ length: 15 }, (_, i) => ({ id: String(i + 1), label: String(i + 1), locked: i + 1 > unlocked }));
+      items.push({ id: 'endless', label: '16+', sub: 'endless', locked: unlocked < 16 });
+      return items;
+    },
+    chip: () => {
+      const n = storage.get<number>('untangle:unlocked', 1) - 1;
+      return n > 0 ? `Level ${n}` : null;
+    },
   },
   // ---- Brain Lab (batches 5-7) ----
   brain('light-bender', 'Light Bender', 'Bend the beam. Light every crystal.', '#38E1F5', ['mouse', 'tap', 'keys'], 120),
@@ -118,8 +151,14 @@ export const GAMES: GameMeta[] = [
   {
     id: 'sumo-blobs', title: 'Sumo Blobs', tagline: 'Bump your friend off the platform. First to 3.',
     color: '#FF4F8B', gradient: 'linear-gradient(90deg,#FF4F8B,#38E1F5)',
-    group: 'Play together', controls: ['2p', 'keys'], unit: 'rounds',
-    canvas: 'fit', hud: 'none', format: int,
+    group: 'Play together', controls: ['2p', 'keys', 'tap'], unit: 'rounds',
+    canvas: 'fit', logical: { w: 960, h: 640 }, hud: 'none', format: int,
+    load: () => import('./sumo-blobs'),
+    picker: () => [
+      { id: '2p', label: '2 Players' }, { id: 'easy', label: 'vs CPU', sub: 'easy' },
+      { id: 'normal', label: 'vs CPU', sub: 'normal' }, { id: 'hard', label: 'vs CPU', sub: 'hard' },
+    ],
+    toggles: [{ id: 'chaos', label: 'Chaos power-ups' }],
   },
 ];
 

@@ -211,7 +211,7 @@ input[type=range] { accent-color: var(--cyan); width: 150px; }
 .stat { background: var(--bg); border-radius: 12px; padding: 10px 6px; }
 .stat b { display: block; font-family: var(--font-title); font-size: 20px; font-weight: 600; }
 .stat span { font-size: 12px; color: var(--muted); }
-.pa-over .buttons { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; margin-top: 6px; }
+.pa-over .buttons { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 8px; margin-top: 6px; }
 .pa-over .buttons .btn { padding: 0 10px; }
 .kbd-hint { color: var(--muted); font-size: 12px; margin-top: 2px; }
 
@@ -250,3 +250,35 @@ input[type=range] { accent-color: var(--cyan); width: 150px; }
 .hub-panel { animation: fade .2s ease-out; }
 .hub-panel > section:first-child .grid { margin-top: 18px; }
 .hub-panel > section:first-child .group-label { margin-top: 22px; }
+
+/* ---------- start-screen picker (modes / levels) ---------- */
+.modes .btn.mode { min-height: 44px; padding: 0 18px; font-size: 15px; flex-direction: column; gap: 0; line-height: 1.1; }
+.modes .btn.mode small { font-size: 11px; color: var(--yellow); font-weight: 700; letter-spacing: .06em; }
+.modes .btn.mode[aria-checked="true"] { background: var(--c); color: var(--bg); box-shadow: 0 0 18px color-mix(in srgb, var(--c) 45%, transparent); }
+.modes .btn.mode[aria-checked="true"] small { color: var(--bg); }
+.modes .btn.mode:disabled { opacity: .35; cursor: default; }
+.modes.levels { display: grid; grid-template-columns: repeat(5, 56px); gap: 8px; max-width: 360px; }
+.modes.levels .btn.mode { padding: 0; min-height: 52px; font-family: var(--font-title); font-size: 19px; border-radius: 14px; }
+.pa-over .buttons.has-next { grid-template-columns: repeat(4, 1fr); }
+.pa-over .buttons.has-next .btn:first-child { grid-column: 1 / -1; }
+.pa-toggles { display: flex; justify-content: center; gap: 14px; margin: -6px 0 18px; }
+.pa-toggle { display: flex; align-items: center; gap: 10px; font-weight: 600; cursor: pointer; }
+
+/* ---------- daily ---------- */
+.pa-daily-badge { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 22px;
+  font-family: var(--font-title); font-weight: 700; font-size: 20px; color: var(--yellow); letter-spacing: .08em; }
+.pa-daily-badge small { font-family: var(--font-ui); font-weight: 600; font-size: 14px; color: var(--muted); letter-spacing: 0; }
+.pa-daily-result { font-family: var(--font-title); font-weight: 600; color: var(--yellow); }
+.daily { margin: 18px 0 0; padding: 14px; border-radius: var(--r-card); background: linear-gradient(135deg, rgba(255,217,61,.12), rgba(155,123,255,.1)); box-shadow: inset 0 0 0 1px rgba(255,217,61,.25); }
+.daily-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.daily-head b { font-family: var(--font-title); font-size: 20px; color: var(--yellow); }
+.daily-head .streak { font-family: var(--font-title); font-weight: 600; color: var(--orange); }
+.daily-head .btn { margin-left: auto; min-height: 36px; padding: 0 16px; font-size: 14px; }
+.daily-games { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+@media (max-width: 600px) { .daily-games { grid-template-columns: 1fr; } }
+.daily-game { --c: var(--cyan); display: flex; align-items: center; justify-content: space-between; gap: 8px; text-decoration: none; padding: 10px 14px;
+  border-radius: 12px; background: var(--surface); box-shadow: inset 4px 0 0 var(--c); transition: transform .15s var(--ease-back), background .15s; }
+.daily-game:hover, .daily-game:focus-visible { transform: translateY(-2px); background: var(--surface-2); }
+.daily-game b { font-family: var(--font-title); font-weight: 600; }
+.daily-game span { font-family: var(--font-title); font-weight: 600; font-size: 14px; color: var(--c); }
+.daily-game.done span { color: var(--yellow); }

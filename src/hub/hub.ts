@@ -1,4 +1,5 @@
 import { GameHost } from '../engine/host';
+import { dailyGames, dailyNumber, dailyResults, dailyShareText, streak } from '../engine/daily';
 import { randomSeed } from '../engine/rng';
 import { getScores } from '../engine/scores';
 import { settings } from '../engine/settings';
@@ -8,6 +9,7 @@ import { GAMES, playable, starsEarned, TABS, type GameMeta, type Tab } from '../
 import { h } from '../shell/dom';
 import { CONTROL_ICON, CONTROL_LABEL, ICON } from '../shell/icons';
 import { openSettings, soundOn, toggleSound } from '../shell/settings-panel';
+import { share } from '../shell/share';
 
 interface Card {
   meta: GameMeta;
@@ -78,12 +80,29 @@ export class Hub {
     }
     const saved = storage.get<Tab>('hub:tab', 'arcade');
     this.setTab(TABS.some((t) => t.id === saved) ? saved : 'arcade', false);
-    this.root = h('div.hub', {}, header, tablist, main,
+    this.root = h('div.hub', {}, header, this.dailyStrip(), tablist, main,
       h('footer.hub-footer', {}, 'Works offline. No accounts, no ads. Scores stay on this device.'));
     parent.append(this.root);
     this.root.addEventListener('keydown', (e) => this.onKey(e));
     for (const c of this.cards) if (previewOf(c.meta)) this.io.observe(c.preview);
     this.raf = requestAnimationFrame(this.frame);
+  }
+
+  /** Today's seeded challenge: 3 rotating games and the streak. */
+  private dailyStrip(): HTMLElement {
+    const res = dailyResults();
+    const games = dailyGames().map((id) => GAMES.find((g) => g.id === id)).filter((g): g is GameMeta => !!g && playable(g));
+    const titles = Object.fromEntries(GAMES.map((g) => [g.id, g.title]));
+    const st = streak();
+    const done = games.filter((g) => res[g.id]).length;
+    return h('section.daily', { 'aria-label': 'Daily challenge' },
+      h('div.daily-head', {},
+        h('b', {}, `Daily #${dailyNumber()}`),
+        h('span.streak', {}, st ? `${st}-day streak` : 'Start a streak today'),
+        done ? h('button.btn', { type: 'button', onclick: () => void share(dailyShareText(titles)) }, 'Share') : null),
+      h('div.daily-games', {}, ...games.map((g) => h(`a.daily-game${res[g.id] ? '.done' : ''}`, { href: `#/game/${g.id}/daily`, style: `--c:${g.color}` },
+        h('b', {}, g.title), h('span', {}, res[g.id] ? res[g.id].label : 'Play')))),
+    );
   }
 
   private setTab(tab: Tab, save = true): void {
