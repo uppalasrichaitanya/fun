@@ -1,6 +1,6 @@
 import { midiHz } from '../../engine/audio';
 import { History, undoKey } from '../../engine/editor/history';
-import { drawBtn, hitBtn, InventoryBar, roundRect, type Btn, type InvItem } from '../../engine/editor/ui';
+import { drawBtn, fitText, hitBtn, InventoryBar, roundRect, titleRoom, type Btn, type InvItem } from '../../engine/editor/ui';
 import { drawGlow } from '../../engine/glow';
 import type { Pointer } from '../../engine/input';
 import type { Level } from '../../engine/levels/pack';
@@ -602,7 +602,7 @@ class WireIt implements Game {
   private layout(): void {
     const { w, h: H } = this.ctx.canvas;
     const small = this.demo || this.ctx.preview;
-    const top = small ? 8 : 74 + (this.numbersOn() ? 36 : 0);
+    const top = small ? 8 : 74 + (this.numbersOn() ? 36 : 0) + (w < 560 ? 32 : 0);
     const codeH = small ? 0 : 30 + this.def.outputs.length * 22 + 10;
     const invH = small ? 0 : 74;
     const wide = w > 820 && !small;
@@ -630,8 +630,9 @@ class WireIt implements Game {
     const bs = 44, gap = 8, right = w - 64;
     const busy = this.locked();
     const ids: [string, Btn['icon'], boolean][] = [['reset', 'reset', !busy && this.net.gates.length + this.net.wires.length > 0], ['redo', 'redo', !busy && this.hist.canRedo], ['undo', 'undo', !busy && this.hist.canUndo]];
-    this.btns = ids.map(([id, icon, en], i) => ({ id, icon, x: right - (i + 1) * bs - i * gap - 120, y: 12, w: bs, h: bs, enabled: en }));
-    this.btns.push({ id: 'test', icon: 'test', label: 'Test', x: right - 112, y: 12, w: 112, h: bs, enabled: !this.testing && this.solvedT < 0, primary: true });
+    const testW = w < 560 ? bs : 112;
+    this.btns = ids.map(([id, icon, en], i) => ({ id, icon, x: right - (i + 1) * bs - i * gap - testW - gap, y: 12, w: bs, h: bs, enabled: en }));
+    this.btns.push({ id: 'test', icon: 'test', label: testW > bs ? 'Test' : undefined, x: right - testW, y: 12, w: testW, h: bs, enabled: !this.testing && this.solvedT < 0, primary: true });
   }
 
   render(): void {
@@ -822,11 +823,12 @@ class WireIt implements Game {
     const hov = this.ctx.input.hasHover ? this.ctx.input.hover : null;
     g.textAlign = 'left'; g.textBaseline = 'alphabetic';
     g.fillStyle = C.text; g.font = `700 19px ${FONT.title}`;
-    g.fillText(`${this.level.chapter} ${this.level.n} · ${this.def.name}`, 16, 30);
+    const room = titleRoom(this.btns, w - 64) - 16;
+    g.fillText(fitText(g, `${this.level.chapter} ${this.level.n} · ${this.def.name}`, room), 16, 30);
     g.fillStyle = C.muted; g.font = `600 13px ${FONT.ui}`;
-    const maxW = w - 420;
-    g.fillText(fit(g, this.def.goal, Math.max(120, maxW)), 16, 50);
-    g.fillText(`parts ${gateCount(this.net)}/${this.par.gates} · wires ${wireCount(this.net)}/${this.par.wires}`, 16, 68);
+    const narrow = w < 560;
+    g.fillText(fitText(g, this.def.goal, narrow ? w - 32 : room), 16, narrow ? 78 : 50);
+    g.fillText(fitText(g, `parts ${gateCount(this.net)}/${this.par.gates} · wires ${wireCount(this.net)}/${this.par.wires}`, narrow ? w - 32 : room), 16, narrow ? 96 : 68);
     for (const b of this.btns) drawBtn(g, b, LIVE, !!hov && hitBtn([b], hov.x, hov.y) !== null, this.pressBtn === b.id ? 1 : 0);
     this.inv.draw(g, LIVE, null, hov ? this.inv.at(hov.x, hov.y)?.item.kind ?? null : null, matchMedia('(pointer: fine)').matches);
     // Part rule on hover (plain English).
@@ -987,11 +989,6 @@ function drawPartIcon(g: CanvasRenderingContext2D, type: string, cx: number, cy:
   g.textBaseline = 'alphabetic';
 }
 
-function fit(g: CanvasRenderingContext2D, s: string, max: number): string {
-  if (g.measureText(s).width <= max) return s;
-  while (s.length > 4 && g.measureText(s + '…').width > max) s = s.slice(0, -1);
-  return s + '…';
-}
 
 const short = (n: string): string => (n.length > 4 ? n.slice(0, 4) : n);
 

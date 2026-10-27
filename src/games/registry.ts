@@ -61,6 +61,7 @@ const BRAIN_LOADERS: Record<string, () => Promise<{ default: GameFactory }>> = {
   'light-bender': () => import('./light-bender'),
   'maze-maker': () => import('./maze-maker'),
   'wire-it': () => import('./wire-it'),
+  'gravity-golf': () => import('./gravity-golf'),
 };
 
 export const GAMES: GameMeta[] = [

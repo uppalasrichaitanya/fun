@@ -71,6 +71,8 @@ export interface Game {
   destroy(): void;
   /** Counts for the F3 debug overlay. */
   debugInfo?(): Record<string, number | string>;
+  /** Return true to keep a key the shell would otherwise use (e.g. Escape = back to build, not pause). */
+  captureKey?(code: string): boolean;
 }
 
 export type GameFactory = () => Game;

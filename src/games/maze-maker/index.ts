@@ -1,7 +1,7 @@
 import { midiHz } from '../../engine/audio';
 import { History, undoKey } from '../../engine/editor/history';
 import { EditorPanel, exportJson } from '../../engine/editor/panel';
-import { drawBtn, fitGrid, hitBtn, InventoryBar, roundRect, type Btn, type InvItem } from '../../engine/editor/ui';
+import { drawBtn, fitGrid, fitText, hitBtn, InventoryBar, roundRect, titleRoom, type Btn, type InvItem } from '../../engine/editor/ui';
 import { drawGlow } from '../../engine/glow';
 import type { Pointer } from '../../engine/input';
 import type { Level } from '../../engine/levels/pack';
@@ -579,7 +579,7 @@ class MazeMaker implements Game {
     const hov = this.ctx.input.hasHover ? this.ctx.input.hover : null;
     g.textAlign = 'left'; g.textBaseline = 'alphabetic';
     g.fillStyle = C.text; g.font = `700 19px ${FONT.title}`;
-    g.fillText(`${this.level.chapter} ${this.level.n} · ${this.def.name}`, 16, 30);
+    g.fillText(fitText(g, `${this.level.chapter} ${this.level.n} · ${this.def.name}`, titleRoom(this.btns, w - 64) - 16), 16, 30);
     // Path counter with target markers.
     const barX = 16, barY = 44, barW = Math.min(300, w - 280), barH = 14;
     g.fillStyle = PATH; g.font = `700 20px ${FONT.title}`;

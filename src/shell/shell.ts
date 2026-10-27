@@ -403,6 +403,7 @@ export class Shell {
         }
         break;
       case 'playing':
+        if (this.host?.game.captureKey?.(code)) break;
         if (code === 'Escape' || code === 'KeyP') { consume(); this.pause(); }
         break;
       case 'paused':

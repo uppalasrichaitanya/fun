@@ -206,3 +206,16 @@ export function fitGrid(cols: number, rows: number, x: number, y: number, w: num
   const cell = Math.floor(Math.min(w / cols, h / rows, maxCell));
   return { cell, ox: Math.round(x + (w - cols * cell) / 2), oy: Math.round(y + (h - rows * cell) / 2) };
 }
+
+/** Shorten text with an ellipsis to fit `max` px in the current font. */
+export function fitText(g: CanvasRenderingContext2D, s: string, max: number): string {
+  if (g.measureText(s).width <= max) return s;
+  while (s.length > 2 && g.measureText(s + '…').width > max) s = s.slice(0, -1);
+  return s + '…';
+}
+
+/** Room left of the top toolbar for the title block. */
+export function titleRoom(btns: readonly Btn[], fallback: number): number {
+  const xs = btns.filter((b) => b.y < 60).map((b) => b.x);
+  return (xs.length ? Math.min(...xs) : fallback) - 28;
+}

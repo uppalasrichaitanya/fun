@@ -9,7 +9,8 @@ npm install
 npm run dev        # local dev server
 npm run build      # typecheck + production build into dist/
 npm run preview    # serve dist/
-npm test           # unit tests (game logic, bots, Bid War rules engine, daily)
+npm test           # unit tests (game logic, bots, Bid War rules engine, daily, Brain Lab levels)
+npm run verify-levels  # run every Brain Lab level's stored solution 3x headlessly (also part of build)
 npm run sim        # Bid War bot simulator; add -- --write to record results in config.ts
 npm run packs      # download Pokemon / hero artwork into public/packs/ (needs network, run once)
 ```
@@ -24,7 +25,8 @@ Deploy `dist/` to any static host (Vercel, Netlify, GitHub Pages). Asset paths a
 | 2 | Merge Drop, Untangle (15 levels + endless), Rocket Lander (15 levels, all verified 3-star by autopilot) | Built, awaiting playtest |
 | 3 | Grapple Swing, Sumo Blobs, Tiny Survivors, daily challenge, PNG share cards | Built, awaiting playtest |
 | 4 | Bid War (all 6 sub-specs, 3 packs, pack scripts, bot simulator) + hub tabs | Built, awaiting playtest |
-| 5-7 | Brain Lab shared systems and its 10 games | Not started (cards on the hub) |
+| 5 | Brain Lab shared systems + Light Bender (40), Maze Maker (30 + 10 defence), Wire It (30), Gravity Golf (40) | Built, awaiting playtest |
+| 6-7 | Switchyard, Heist 15, Firebreak, Bridge It, Rocket Builder, Micro Escape | Not started (cards on the hub) |
 
 The hub has three tabs: Arcade, Brain Lab (cards show stars earned, e.g. "27 / 90 stars"), Play Together.
 Games not built yet appear as compact "Coming soon" cards.
@@ -36,6 +38,25 @@ Every player gets the same seed for a game on a given day (`#/game/<id>/daily`);
 is official, later ones are practice. One official attempt per day keeps the streak alive.
 The game-over panel's Image button renders a 1080x1080 PNG (`shell/share-card.ts`) from the final frame;
 on touch devices it opens the share sheet, elsewhere it downloads.
+
+## Brain Lab
+
+Build-and-solve games. Each has chapter JSON files in `src/games/<id>/levels/`, a pure `logic.ts`
+(the same rules run in the game, the verifier and the level generator) and a `verify.ts`.
+
+```
+src/engine/levels/   pack.ts (chapter files -> levels, schema check, dev error log)  schema.ts
+                     progress.ts (stars per level under <id>:stars, versioned save, unlock rules, ?editor)
+                     session.ts (pick level, finish -> stars panel with goals)  verify.ts (verifier contract)
+src/engine/editor/   history.ts (100-step undo/redo)  grid.ts (snap placement, drag/tap/long-press/right-click)
+                     ui.ts (toolbar buttons, inventory bar, budget meter)  panel.ts (?editor panel, JSON export)
+src/games/brain-lab.ts      chapter manifest (level select without loading level data)
+src/games/brain-verify.ts   all verifiers; used by scripts/verify-levels.ts and brain-verify.test.ts
+scripts/gen-light-bender.ts  gen-maze-maker.ts (--check re-runs the best-length search)  gen-gravity-golf.ts
+```
+
+Levels unlock on 1 star (Maze Maker's defence chapter opens after puzzle 10). Add `?editor` to the URL
+(before the `#`) to unlock everything and get the dev editor panel: paint tools, "build = solution", export JSON.
 
 ## Bid War
 

@@ -2,7 +2,7 @@ import { midiHz, type Drone } from '../../engine/audio';
 import { GridPlacer, type EditKind, type GridModel } from '../../engine/editor/grid';
 import { History, undoKey } from '../../engine/editor/history';
 import { EditorPanel, exportJson } from '../../engine/editor/panel';
-import { drawBtn, fitGrid, hitBtn, InventoryBar, roundRect, type Btn, type InvItem } from '../../engine/editor/ui';
+import { drawBtn, fitGrid, fitText, hitBtn, InventoryBar, roundRect, titleRoom, type Btn, type InvItem } from '../../engine/editor/ui';
 import { drawGlow } from '../../engine/glow';
 import type { Level } from '../../engine/levels/pack';
 import { editorMode } from '../../engine/levels/progress';
@@ -471,11 +471,12 @@ class LightBender implements Game {
     g.textAlign = 'left'; g.textBaseline = 'alphabetic';
     g.fillStyle = C.text; g.font = `700 20px ${FONT.title}`;
     const title = `${this.level.chapter} ${this.level.n} · ${this.def.name}`;
-    g.fillText(fitText(g, title, Math.max(80, w - 260)), 16, 34);
+    const room = titleRoom(this.btns, w - 64) - 16;
+    g.fillText(fitText(g, title, room), 16, 34);
     g.fillStyle = C.muted; g.font = `600 13px ${FONT.ui}`;
     const crystals = this.board.crystals.filter((c) => !c.gem);
     const litN = crystals.filter((c) => this.lit[this.board.crystals.indexOf(c)]).length;
-    g.fillText(`${litN}/${crystals.length} crystals · ${this.build.pieces.length} piece${this.build.pieces.length === 1 ? '' : 's'} · par ${this.def.par}`, 16, 54);
+    g.fillText(fitText(g, `${litN}/${crystals.length} crystals · ${this.build.pieces.length} piece${this.build.pieces.length === 1 ? '' : 's'} · par ${this.def.par}`, room), 16, 54);
     for (const b of this.btns) drawBtn(g, b, ACCENT, !!hov && hitBtn([b], hov.x, hov.y) !== null, this.pressBtn === b.id ? 1 : 0);
     const hk = hov && this.inv.at(hov.x, hov.y);
     this.inv.draw(g, ACCENT, this.placer.selected, hk ? hk.item.kind : null, matchMedia('(pointer: fine)').matches);
@@ -598,11 +599,6 @@ class LightBender implements Game {
 
 function fmtTime(s: number): string { return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`; }
 
-function fitText(g: CanvasRenderingContext2D, s: string, max: number): string {
-  if (g.measureText(s).width <= max) return s;
-  while (s.length > 4 && g.measureText(s + '…').width > max) s = s.slice(0, -1);
-  return s + '…';
-}
 
 /** A piece centred on (x, y) in a tile of `size`. Player pieces sit on a lit plate; fixed ones are bolted. */
 export function drawPiece(g: CanvasRenderingContext2D, kind: Kind, o: number, x: number, y: number, size: number, fixed: boolean, clock: number, combined?: number): void {
