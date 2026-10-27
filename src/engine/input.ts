@@ -29,6 +29,7 @@ export class Input {
   private downFns = new Set<PointerFn>();
   private moveFns = new Set<PointerFn>();
   private upFns = new Set<PointerFn>();
+  private altFns = new Set<PointerFn>();
   private keyFns = new Set<KeyFn>();
   private keyUpFns = new Set<KeyFn>();
   private off: (() => void)[] = [];
@@ -55,8 +56,9 @@ export class Input {
     this.off.push(() => t.removeEventListener(type, fn, opts));
   }
 
-  on(type: 'down' | 'move' | 'up', fn: PointerFn): void {
-    (type === 'down' ? this.downFns : type === 'move' ? this.moveFns : this.upFns).add(fn);
+  /** 'alt' = right-click (secondary button) press; the context menu never opens. */
+  on(type: 'down' | 'move' | 'up' | 'alt', fn: PointerFn): void {
+    (type === 'down' ? this.downFns : type === 'move' ? this.moveFns : type === 'up' ? this.upFns : this.altFns).add(fn);
   }
   onKey(fn: KeyFn): void { this.keyFns.add(fn); }
   onKeyUp(fn: KeyFn): void { this.keyUpFns.add(fn); }
@@ -73,7 +75,14 @@ export class Input {
   }
 
   private onDown = (e: PointerEvent): void => {
-    if (e.button > 0) return;
+    if (e.button > 0) {
+      if (e.button === 2 && this.enabled) {
+        const p: Pointer = { id: e.pointerId, x: 0, y: 0, cx: 0, cy: 0, type: 'mouse', down: false };
+        this.update(p, e);
+        for (const fn of this.altFns) fn(p, e);
+      }
+      return;
+    }
     let p = this.pointers.get(e.pointerId);
     if (!p) { p = { id: e.pointerId, x: 0, y: 0, cx: 0, cy: 0, type: 'mouse', down: true }; this.pointers.set(e.pointerId, p); }
     p.down = true;
@@ -130,6 +139,6 @@ export class Input {
   destroy(): void {
     for (const f of this.off) f();
     this.off.length = 0;
-    this.downFns.clear(); this.moveFns.clear(); this.upFns.clear(); this.keyFns.clear(); this.keyUpFns.clear();
+    this.downFns.clear(); this.moveFns.clear(); this.upFns.clear(); this.altFns.clear(); this.keyFns.clear(); this.keyUpFns.clear();
   }
 }

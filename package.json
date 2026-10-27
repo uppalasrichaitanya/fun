@@ -5,14 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run typecheck && vite build",
+    "build": "npm run typecheck && npm run verify-levels && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit && tsc --noEmit -p scripts",
     "test": "vitest run",
     "sim": "tsx scripts/simulate-bid-war.ts",
     "pack:pokemon": "NODE_USE_ENV_PROXY=1 tsx scripts/build-pokemon-pack.ts",
     "pack:heroes": "NODE_USE_ENV_PROXY=1 tsx scripts/build-heroes-pack.ts",
-    "packs": "npm run pack:pokemon && npm run pack:heroes"
+    "packs": "npm run pack:pokemon && npm run pack:heroes",
+    "verify-levels": "tsx scripts/verify-levels.ts"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",

@@ -3,7 +3,7 @@ import { randomSeed } from '../engine/rng';
 import { getScores, recordScore } from '../engine/scores';
 import { dailyNumber, dailyResults, dailySeed, dailyShareText, recordDaily } from '../engine/daily';
 import { storage } from '../engine/storage';
-import { GAMES } from '../games/registry';
+import { GAMES, starsEarned } from '../games/registry';
 import { shareCard } from './share-card';
 import type { Game, GameResult, ShellHooks } from '../engine/types';
 import type { GameMeta } from '../games/registry';
@@ -125,7 +125,8 @@ export class Shell {
     this.startEl = h('div.pa-overlay.pa-start', { onpointerdown: (e: Event) => { if (e.target === this.startEl) { e.preventDefault(); this.play(); } } },
       h('h1', {}, this.meta.title),
       h('p.tagline', {}, this.meta.tagline),
-      dailyLine ?? h('div.best', {}, best == null ? 'No best yet' : `Best ${this.meta.format(best)}`),
+      dailyLine ?? h('div.best', {}, this.meta.stars ? `${starsEarned(this.meta.id)} / ${this.meta.stars} stars`
+        : best == null ? 'No best yet' : `Best ${this.meta.format(best)}`),
       picker,
       playBtn,
     );
@@ -140,19 +141,30 @@ export class Shell {
     this.pickEls = [];
     if (!this.meta.picker) return null;
     const items = this.meta.picker();
-    const saved = storage.get<string | null>(`${this.meta.id}:mode`, null);
+    const saved = this.meta.pickDefault?.() ?? storage.get<string | null>(`${this.meta.id}:mode`, null);
     const open = items.filter((i) => !i.locked);
     this.mode = (open.find((i) => i.id === saved) ?? open[open.length - 1] ?? items[0])?.id;
-    const wrap = h(`div.modes${items.length > 6 ? '.levels' : ''}`, { role: 'radiogroup', 'aria-label': 'Choose' });
+    const chapters = items.some((i) => i.group);
+    const wrap = h(`div.modes${chapters ? '.chapters' : items.length > 6 ? '.levels' : ''}`, { role: 'radiogroup', 'aria-label': 'Choose' });
+    let grid: HTMLElement = wrap;
+    let group: string | undefined;
     for (const it of items) {
+      if (chapters && it.group !== group) {
+        group = it.group;
+        grid = h('div.levels');
+        wrap.append(h('div.chapter', {}, h('h3', {}, group ?? ''), grid));
+      }
+      const starRow = it.stars !== undefined ? h('i.stars', { 'aria-label': `${it.stars} of 3 stars` }, '★'.repeat(it.stars) + '☆'.repeat(3 - it.stars)) : null;
       const b = h('button.btn.mode', {
         type: 'button', role: 'radio', disabled: !!it.locked, 'data-id': it.id,
+        'aria-label': chapters ? `${it.group} level ${it.label}${it.locked ? ', locked' : ''}` : undefined,
         onclick: (e: Event) => { e.stopPropagation(); if (this.mode === it.id) this.play(); else this.pick(it.id); },
-      }, h('span', {}, it.label), it.sub ? h('small', {}, it.sub) : null);
+      }, h('span', {}, it.label), it.sub ? h('small', {}, it.sub) : null, starRow);
       this.pickEls.push(b);
-      wrap.append(b);
+      grid.append(b);
     }
     this.pick(this.mode);
+    if (chapters) requestAnimationFrame(() => this.pickEls.find((b) => b.dataset.id === this.mode)?.scrollIntoView({ block: 'nearest' }));
     const toggles = this.meta.toggles ?? [];
     if (!toggles.length) return wrap;
     const box = h('div.pa-toggles');
@@ -175,14 +187,18 @@ export class Shell {
 
   private pick(id: string | undefined): void {
     this.mode = id;
-    for (const b of this.pickEls) b.setAttribute('aria-checked', String(b.dataset.id === id));
+    for (const b of this.pickEls) {
+      b.setAttribute('aria-checked', String(b.dataset.id === id));
+      if (b.dataset.id === id && b.closest('.chapters')) b.scrollIntoView({ block: 'nearest' });
+    }
   }
 
   private stepPick(d: number): void {
     const open = this.pickEls.filter((b) => !b.disabled);
     if (!open.length) return;
     const i = open.findIndex((b) => b.dataset.id === this.mode);
-    this.pick(open[(i + d + open.length) % open.length].dataset.id);
+    const j = Math.abs(d) > 1 ? Math.max(0, Math.min(open.length - 1, i + d)) : (i + d + open.length) % open.length;
+    this.pick(open[j].dataset.id);
   }
 
   play(mode?: string): void {
@@ -229,6 +245,7 @@ export class Shell {
         h('h2', {}, 'Paused'),
         resume,
         h('button.btn', { type: 'button', onclick: () => this.play() }, 'Restart'),
+        this.meta.stars ? h('button.btn', { type: 'button', onclick: () => this.toLevels() }, 'Levels') : null,
         soundBtn,
         h('button.btn', { type: 'button', onclick: () => openSettings(() => resume.focus()) }, 'Settings'),
         h('button.btn', { type: 'button', onclick: () => this.exit() }, 'Exit to hub'),
@@ -245,6 +262,18 @@ export class Shell {
     this.host.input.enabled = true;
     this.host.audio.duck(false);
     this.host.game.resume();
+  }
+
+  /** Brain Lab: back to the level select. */
+  private toLevels(): void {
+    if (!this.host) return;
+    clearTimeout(this.overTimer);
+    this.pauseEl?.remove(); this.pauseEl = null;
+    this.overEl?.remove(); this.overEl = null;
+    this.confetti.stop();
+    this.hud.classList.add('hidden');
+    this.host.audio.duck(false);
+    this.enterStart();
   }
 
   private gameOver(result: GameResult, delayMs = 650): void {
@@ -285,13 +314,15 @@ export class Shell {
       r.noScore || this.meta.unit === '%' ? null : h('div.unit', {}, this.meta.unit),
       r.noScore ? null : rec.isNewBest ? h('div.newbest', {}, 'NEW BEST!') : h('div.bestline', {}, `Best ${this.meta.format(rec.best)}`),
       r.rank ? h('div.rank', {}, r.rank) : null,
+      r.stars ? this.starBlock(r.stars) : null,
       dailyRec ? h('div.pa-daily-result', {}, dailyRec.official ? `Official daily score: ${dailyRec.entry.label}` : `Practice run · official: ${dailyRec.entry.label}`) : null,
       r.stats.length ? h('div.stats', {}, ...r.stats.map((s) => h('div.stat', {}, h('b', {}, s.value), h('span', {}, s.label)))) : null,
       h(`div.buttons${nextBtn ? '.has-next' : ''}`, {},
         nextBtn,
         retry,
+        this.meta.stars ? h('button.btn', { type: 'button', onclick: () => this.toLevels() }, 'Levels') : null,
         h('button.btn', { type: 'button', onclick: () => void share(text) }, 'Share'),
-        h('button.btn', { type: 'button', onclick: image, 'aria-label': 'Share image' }, 'Image'),
+        this.meta.stars ? null : h('button.btn', { type: 'button', onclick: image, 'aria-label': 'Share image' }, 'Image'),
         h('button.btn', { type: 'button', onclick: () => this.exit() }, 'Hub'),
       ),
       matchMedia('(pointer: fine)').matches ? h('div.kbd-hint', {}, next ? `Enter: ${next.label} · R: retry` : 'Space / Enter / R to retry') : null,
@@ -316,6 +347,20 @@ export class Shell {
     requestAnimationFrame(step);
   }
 
+  /** Three stars that stamp in one by one (with a rising chime), plus the goal list. */
+  private starBlock(st: NonNullable<GameResult['stars']>): HTMLElement {
+    const host = this.host!;
+    const row = h('div.pa-stars');
+    for (let i = 0; i < 3; i++) {
+      const on = i < st.earned;
+      row.append(h(`span${on ? '.on' : ''}`, { style: `animation-delay:${0.25 + i * 0.28}s` }, '★'));
+      if (on) window.setTimeout(() => { if (this.state === 'over') host.audio.chime(4 + i * 2, 0.22); }, 250 + i * 280);
+    }
+    if (st.earned === 3) window.setTimeout(() => { if (this.state === 'over') { this.confetti.fire(); host.audio.fanfare(); } }, 1150);
+    const goals = h('ul.pa-goals', {}, ...st.goals.map((g, i) => h(`li${st.met[i] ? '.met' : ''}`, {}, g)));
+    return h('div.pa-starblock', {}, row, goals, st.improved ? h('div.newbest', {}, 'NEW BEST!') : null);
+  }
+
   /** Copy of the final frame for the share card. */
   private snapshot(): HTMLCanvasElement | null {
     const src = this.host?.canvas.el;
@@ -337,7 +382,7 @@ export class Shell {
 
   private updateBest(): void {
     const b = getScores(this.meta.id).best;
-    this.bestEl.textContent = b == null ? '' : `Best ${this.meta.format(b)}`;
+    this.bestEl.textContent = b == null || this.meta.stars ? '' : `Best ${this.meta.format(b)}`;
   }
 
   private exit(): void { location.hash = '#/'; }
@@ -352,7 +397,9 @@ export class Shell {
         if (code === 'Space' || code === 'Enter') { consume(); this.play(); }
         else if (code === 'Escape') { consume(); this.exit(); }
         else if (this.pickEls.length && (code === 'ArrowLeft' || code === 'ArrowRight' || code === 'ArrowUp' || code === 'ArrowDown')) {
-          consume(); this.stepPick(code === 'ArrowLeft' || code === 'ArrowUp' ? -1 : 1);
+          consume();
+          const row = this.meta.stars ? 5 : 1;
+          this.stepPick(code === 'ArrowLeft' ? -1 : code === 'ArrowRight' ? 1 : code === 'ArrowUp' ? -row : row);
         }
         break;
       case 'playing':
@@ -370,6 +417,7 @@ export class Shell {
           consume();
           if (!e.repeat && performance.now() >= this.acceptRetryAt) this.play(code !== 'KeyR' ? this.nextMode : undefined);
         } else if (code === 'Escape' || code === 'KeyH') { consume(); this.exit(); }
+        else if (code === 'KeyL' && this.meta.stars) { consume(); this.toLevels(); }
         break;
     }
   }

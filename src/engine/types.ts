@@ -25,6 +25,8 @@ export interface GameResult {
   noScore?: boolean;
   /** How this result reads in the daily share line (default: the formatted score). */
   dailyLabel?: string;
+  /** Brain Lab: stars earned with their three goals (met or not). */
+  stars?: { earned: number; goals: readonly string[]; met: readonly boolean[]; improved?: boolean };
 }
 
 export interface ShellHooks {

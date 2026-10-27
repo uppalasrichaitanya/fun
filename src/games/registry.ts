@@ -1,5 +1,8 @@
 import type { CanvasMode } from '../engine/canvas';
+import { levelIds } from '../engine/levels/pack';
+import { Progress } from '../engine/levels/progress';
 import { storage } from '../engine/storage';
+import { BRAIN_CHAPTERS, BRAIN_GATES } from './brain-lab';
 import type { GameFactory } from '../engine/types';
 
 export type Group = 'Addictive' | 'Quick challenges' | 'Chill' | 'Brain Lab' | 'Play together';
@@ -39,11 +42,25 @@ export interface GameMeta {
   picker?: () => PickItem[];
   /** On/off options on the start screen; enabled ones are appended to the mode as "+id". */
   toggles?: { id: string; label: string }[];
+  /** Picker item selected when the start screen opens (default: the last one played). */
+  pickDefault?: () => string;
 }
 
-export interface PickItem { id: string; label: string; sub?: string; locked?: boolean }
+export interface PickItem {
+  id: string; label: string; sub?: string; locked?: boolean;
+  /** Chapter heading; items with a group render as a chapter grid. */
+  group?: string;
+  /** Stars earned (0-3), drawn under the label. */
+  stars?: number;
+}
 
 const int = (n: number) => String(Math.round(n));
+
+/** Built Brain Lab games (the rest show as coming soon). Declared before GAMES, which calls brain(). */
+const BRAIN_LOADERS: Record<string, () => Promise<{ default: GameFactory }>> = {
+  'light-bender': () => import('./light-bender'),
+  'maze-maker': () => import('./maze-maker'),
+};
 
 export const GAMES: GameMeta[] = [
   {
@@ -162,8 +179,28 @@ export const GAMES: GameMeta[] = [
   },
 ];
 
+
 function brain(id: string, title: string, tagline: string, color: string, controls: ControlIcon[], stars: number): GameMeta {
-  return { id, title, tagline, color, group: 'Brain Lab', controls, unit: 'stars', canvas: 'fit', hud: 'none', format: int, stars };
+  const meta: GameMeta = { id, title, tagline, color, group: 'Brain Lab', controls, unit: 'stars', canvas: 'fill', hud: 'none', format: int, stars };
+  const chapters = BRAIN_CHAPTERS[id];
+  const load = BRAIN_LOADERS[id];
+  if (!chapters || !load) return meta;
+  const ids = levelIds(chapters);
+  const gates = BRAIN_GATES[id] ?? {};
+  meta.load = load;
+  meta.stars = ids.length * 3;
+  meta.picker = () => {
+    const p = new Progress(id);
+    let i = 0;
+    return chapters.flatMap((ch) => Array.from({ length: ch.count }, (_, n) => {
+      const lid = ids[i];
+      const item: PickItem = { id: lid, label: String(n + 1), group: ch.title, stars: p.stars(lid), locked: !p.unlocked(ids, i, gates) };
+      i++;
+      return item;
+    }));
+  };
+  meta.pickDefault = () => new Progress(id).suggested(ids, gates);
+  return meta;
 }
 
 /** Stars earned in a Brain Lab game: best stars per level, saved under `<id>:stars`. */
