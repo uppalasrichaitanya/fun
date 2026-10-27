@@ -1,0 +1,8 @@
+{
+  "_note": "Fan estimates, not official data. Edit freely: any field here replaces the built pack's value. Ids are in pokemon.json.",
+  "cards": {
+    "pkmn-25": { "rating": 55 },
+    "pkmn-132": { "rating": 50 },
+    "pkmn-129": { "rating": 40 }
+  }
+}

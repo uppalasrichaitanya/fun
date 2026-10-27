@@ -1,8 +1,14 @@
 import type { CanvasMode } from '../engine/canvas';
+import { storage } from '../engine/storage';
 import type { GameFactory } from '../engine/types';
 
-export type Group = 'Addictive' | 'Quick challenges' | 'Chill' | 'Play together';
+export type Group = 'Addictive' | 'Quick challenges' | 'Chill' | 'Brain Lab' | 'Play together';
 export type ControlIcon = 'mouse' | 'tap' | 'keys' | '2p';
+export type Tab = 'arcade' | 'brain' | 'together';
+
+/** A game that runs its own screens instead of the arcade shell (Bid War). */
+export interface App { destroy(): void }
+export type AppFactory = (parent: HTMLElement) => App;
 
 export interface GameMeta {
   id: string;
@@ -21,6 +27,14 @@ export interface GameMeta {
   format: (score: number) => string;
   /** Missing loader = not built yet (shown as "coming soon"). */
   load?: () => Promise<{ default: GameFactory }>;
+  /** Self-contained app (own setup/results screens). Mutually exclusive with `load`. */
+  app?: () => Promise<{ default: AppFactory }>;
+  /** Attract-mode renderer for the hub card when the game itself is an app. */
+  preview?: () => Promise<{ default: GameFactory }>;
+  /** Brain Lab: total stars available (3 per level). */
+  stars?: number;
+  /** Custom hub chip, e.g. "12 auctions". */
+  chip?: () => string | null;
 }
 
 const int = (n: number) => String(Math.round(n));
@@ -77,6 +91,30 @@ export const GAMES: GameMeta[] = [
     color: '#38E1F5', group: 'Chill', controls: ['mouse', 'tap'], unit: 'level',
     canvas: 'fill', hud: 'left', format: int,
   },
+  // ---- Brain Lab (batches 5-7) ----
+  brain('light-bender', 'Light Bender', 'Bend the beam. Light every crystal.', '#38E1F5', ['mouse', 'tap', 'keys'], 120),
+  brain('maze-maker', 'Maze Maker', "Don't block the monster. Just make its walk very, very long.", '#9B7BFF', ['mouse', 'tap'], 120),
+  brain('wire-it', 'Wire It', 'Wire the gates. Light the right bulbs.', '#4ADE80', ['mouse', 'tap'], 90),
+  brain('gravity-golf', 'Gravity Golf', 'Place your planets. One shot. Hole in one.', '#9B7BFF', ['mouse', 'tap'], 120),
+  brain('switchyard', 'Switchyard', 'Flip the switches. Every train home.', '#4ADE80', ['tap', 'keys'], 108),
+  brain('heist-15', 'Heist 15', "15 seconds. One gem. Don't get seen.", '#FFD93D', ['keys', 'tap'], 108),
+  brain('firebreak', 'Firebreak', 'Read the wind. Save the village.', '#FF9F43', ['mouse', 'tap'], 90),
+  brain('bridge-it', 'Bridge It', 'Build it cheap. Hope it holds.', '#FF9F43', ['mouse', 'tap'], 90),
+  brain('rocket-builder', 'Rocket Builder', 'Build a rocket. Reach the Moon. Fail gloriously.', '#FF9F43', ['mouse', 'keys'], 45),
+  brain('micro-escape', 'Micro Escape', 'One room. One trick. Get out.', '#FF9F43', ['mouse', 'tap'], 9),
+  // ---- Play together ----
+  {
+    id: 'bid-war', title: 'Bid War', tagline: 'Two players. One purse each. Every legend goes to the highest bidder.',
+    color: '#FFD93D', gradient: 'linear-gradient(90deg,#FF4F8B,#FFD93D,#38E1F5)',
+    group: 'Play together', controls: ['2p', 'keys', 'tap'], unit: 'auctions',
+    canvas: 'fit', logical: { w: 640, h: 400 }, hud: 'none', format: int,
+    app: () => import('./bid-war/app'),
+    preview: () => import('./bid-war/preview'),
+    chip: () => {
+      const n = storage.get<unknown[]>('bid-war:history', []).length;
+      return n ? `${n} auction${n === 1 ? '' : 's'}` : null;
+    },
+  },
   {
     id: 'sumo-blobs', title: 'Sumo Blobs', tagline: 'Bump your friend off the platform. First to 3.',
     color: '#FF4F8B', gradient: 'linear-gradient(90deg,#FF4F8B,#38E1F5)',
@@ -85,5 +123,21 @@ export const GAMES: GameMeta[] = [
   },
 ];
 
-export const GROUPS: Group[] = ['Addictive', 'Quick challenges', 'Chill', 'Play together'];
+function brain(id: string, title: string, tagline: string, color: string, controls: ControlIcon[], stars: number): GameMeta {
+  return { id, title, tagline, color, group: 'Brain Lab', controls, unit: 'stars', canvas: 'fit', hud: 'none', format: int, stars };
+}
+
+/** Stars earned in a Brain Lab game: best stars per level, saved under `<id>:stars`. */
+export function starsEarned(id: string): number {
+  const levels = storage.get<Record<string, number>>(`${id}:stars`, {});
+  return Object.values(levels).reduce((a, b) => a + (b || 0), 0);
+}
+
+export const TABS: { id: Tab; label: string; groups: Group[]; sub: string }[] = [
+  { id: 'arcade', label: 'Arcade', groups: ['Addictive', 'Quick challenges', 'Chill'], sub: 'Ten tiny games. One more try.' },
+  { id: 'brain', label: 'Brain Lab', groups: ['Brain Lab'], sub: 'Build it, run it, solve it. Never by luck.' },
+  { id: 'together', label: 'Play Together', groups: ['Play together'], sub: 'Two players, one screen. Trash talk encouraged.' },
+];
+export const GROUPS: Group[] = TABS.flatMap((t) => t.groups);
+export const playable = (g: GameMeta): boolean => !!(g.load || g.app);
 export const findGame = (id: string): GameMeta | undefined => GAMES.find((g) => g.id === id);

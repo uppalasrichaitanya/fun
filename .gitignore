@@ -1,2 +1,4 @@
 node_modules
 dist
+# Third-party pack artwork: downloaded by `npm run packs`, never committed.
+public/packs/

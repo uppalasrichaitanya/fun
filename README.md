@@ -9,6 +9,9 @@ npm install
 npm run dev        # local dev server
 npm run build      # typecheck + production build into dist/
 npm run preview    # serve dist/
+npm test           # unit tests (Bid War rules engine, pools, scoring)
+npm run sim        # Bid War bot simulator; add -- --write to record results in config.ts
+npm run packs      # download Pokemon / hero artwork into public/packs/ (needs network, run once)
 ```
 
 Deploy `dist/` to any static host (Vercel, Netlify, GitHub Pages). Asset paths are relative, so it works from a sub-path too.
@@ -20,8 +23,33 @@ Deploy `dist/` to any static host (Vercel, Netlify, GitHub Pages). Asset paths a
 | 1 | Engine, hub, shell, Stack, Draw a Perfect Circle, Odd Tile Out, Cursor Panic | Built, awaiting playtest |
 | 2 | Merge Drop, Untangle, Rocket Lander | Not started |
 | 3 | Grapple Swing, Sumo Blobs, Tiny Survivors, daily challenge, PNG share cards | Not started |
+| 4 | Bid War (all 6 sub-specs, 3 packs, pack scripts, bot simulator) + hub tabs | Built, awaiting playtest |
+| 5-7 | Brain Lab shared systems and its 10 games | Not started (cards on the hub) |
 
-Games not built yet appear on the hub as compact "Coming soon" cards.
+The hub has three tabs: Arcade, Brain Lab (cards show stars earned, e.g. "27 / 90 stars"), Play Together.
+Games not built yet appear as compact "Coming soon" cards.
+
+## Bid War
+
+Two-player auction on one keyboard (touch buttons on tablets). It runs its own screens instead of the arcade shell:
+`registry.ts` gives it an `app` loader plus a canvas `preview` for the hub card.
+
+```
+src/games/bid-war/
+  rules.ts           pure deterministic state machine (actions in, events out, time via `tick`)
+  pool.ts            seeded pool draw, pack validity checks, match codes
+  scoring.ts         auto score, awards, Civil War, AI-judge prompt
+  config.ts          tiers, purses, timings, music; simulator results at the top
+  packs/*.json       card data (bundled, offline); *.overrides.json = editable fan ratings
+  setup.ts auction-view.ts results.ts civil-war.ts share-image.ts   the screens
+scripts/
+  build-pokemon-pack.ts build-heroes-pack.ts   regenerate pack JSON + download artwork
+  simulate-bid-war.ts                          1,000 bot auctions per configuration
+```
+
+Artwork is third-party, so `public/packs/` is gitignored: run `npm run packs` once before `npm run build`
+on the machine that deploys. Without it, cards fall back to drawn initials art and everything still works.
+The scripts use PokeAPI and the akabab Superhero API, falling back to their GitHub mirrors.
 
 ## Layout
 
