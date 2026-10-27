@@ -3,11 +3,13 @@ import type { Verifier } from '../engine/levels/verify';
 import { BRAIN_CHAPTERS } from './brain-lab';
 import { verifier as lightBender } from './light-bender/verify';
 import { verifier as mazeMaker } from './maze-maker/verify';
+import { verifier as wireIt } from './wire-it/verify';
 
 // Every Brain Lab game's headless verifier. Used by `npm run verify-levels` and the unit tests.
 export const VERIFIERS: Verifier<unknown>[] = [
   lightBender as Verifier<unknown>,
   mazeMaker as Verifier<unknown>,
+  wireIt as Verifier<unknown>,
 ];
 
 export interface LevelReport { game: string; id: string; name: string; solved: boolean; stars: number; deterministic: boolean; note?: string }

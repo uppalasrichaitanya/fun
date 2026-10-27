@@ -1,0 +1,9 @@
+{"title": "Basics", "levels": [
+{"name": "Light it", "inputs": ["a"], "outputs": ["bulb"], "spec": {"bulb": "a"}, "solution": {"bulb": "a"}, "parts": [], "goal": "Make the bulb copy the switch.", "intro": "wire"}, 
+{"name": "Both", "inputs": ["a", "b"], "outputs": ["bulb"], "spec": {"bulb": "AND(a,b)"}, "solution": {"bulb": "BOTH(a,b)"}, "parts": ["BOTH"], "goal": "Light the bulb only when both switches are ON.", "intro": "BOTH"}, 
+{"name": "Either", "inputs": ["a", "b"], "outputs": ["bulb"], "spec": {"bulb": "OR(a,b)"}, "solution": {"bulb": "EITHER(a,b)"}, "parts": ["BOTH", "EITHER"], "goal": "Light the bulb when any switch is ON.", "intro": "EITHER"}, 
+{"name": "Flip", "inputs": ["a"], "outputs": ["bulb"], "spec": {"bulb": "NOT(a)"}, "solution": {"bulb": "FLIP(a)"}, "parts": ["BOTH", "EITHER", "FLIP"], "goal": "Light the bulb when the switch is OFF.", "intro": "FLIP"}, 
+{"name": "Neither", "inputs": ["a", "b"], "outputs": ["bulb"], "spec": {"bulb": "NOR(a,b)"}, "solution": {"bulb": "FLIP(EITHER(a,b))"}, "parts": ["BOTH", "EITHER", "FLIP"], "goal": "Light the bulb only when both switches are OFF."}, 
+{"name": "Not both", "inputs": ["a", "b"], "outputs": ["bulb"], "spec": {"bulb": "NAND(a,b)"}, "solution": {"bulb": "FLIP(BOTH(a,b))"}, "parts": ["BOTH", "EITHER", "FLIP"], "goal": "Light the bulb unless both switches are ON."}, 
+{"name": "All three", "inputs": ["a", "b", "c"], "outputs": ["bulb"], "spec": {"bulb": "AND(AND(a,b),c)"}, "solution": {"bulb": "BOTH(BOTH(a,b),c)"}, "parts": ["BOTH", "EITHER", "FLIP"], "goal": "Light the bulb only when all three switches are ON."}, 
+{"name": "Door alarm", "inputs": ["door", "window", "armed"], "outputs": ["alarm"], "spec": {"alarm": "AND(armed,OR(door,window))"}, "solution": {"alarm": "BOTH(armed,EITHER(door,window))"}, "parts": ["BOTH", "EITHER", "FLIP"], "goal": "Sound the alarm when it is armed and the door or the window is open."}]}

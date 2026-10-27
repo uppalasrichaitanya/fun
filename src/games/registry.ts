@@ -60,6 +60,7 @@ const int = (n: number) => String(Math.round(n));
 const BRAIN_LOADERS: Record<string, () => Promise<{ default: GameFactory }>> = {
   'light-bender': () => import('./light-bender'),
   'maze-maker': () => import('./maze-maker'),
+  'wire-it': () => import('./wire-it'),
 };
 
 export const GAMES: GameMeta[] = [
