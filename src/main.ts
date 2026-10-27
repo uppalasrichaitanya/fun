@@ -17,7 +17,7 @@ settings.on(syncMotion);
 syncMotion();
 
 function route(): void {
-  const m = location.hash.match(/^#\/game\/([\w-]+)/);
+  const m = location.hash.match(/^#\/game\/([\w-]+)(\/daily)?/);
   const meta = m ? findGame(m[1]) : undefined;
   const id = ++routeId;
   app?.destroy(); app = null;
@@ -34,7 +34,7 @@ function route(): void {
   } else if (meta?.load) {
     hub?.destroy(); hub = null;
     shell?.destroy();
-    shell = new Shell(meta, root);
+    shell = new Shell(meta, root, !!m?.[2]);
     document.title = `${meta.title} - Pocket Arcade`;
     void shell.mount().catch((err) => {
       console.error(err);

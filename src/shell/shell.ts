@@ -1,7 +1,10 @@
 import { GameHost } from '../engine/host';
 import { randomSeed } from '../engine/rng';
 import { getScores, recordScore } from '../engine/scores';
+import { dailyNumber, dailyResults, dailySeed, dailyShareText, recordDaily } from '../engine/daily';
 import { storage } from '../engine/storage';
+import { GAMES } from '../games/registry';
+import { shareCard } from './share-card';
 import type { Game, GameResult, ShellHooks } from '../engine/types';
 import type { GameMeta } from '../games/registry';
 import { engine } from '../engine/audio';
@@ -46,7 +49,7 @@ export class Shell {
   private disposed = false;
   private off: (() => void)[] = [];
 
-  constructor(private meta: GameMeta, parent: HTMLElement) {
+  constructor(private meta: GameMeta, parent: HTMLElement, private daily = false) {
     this.root = h('div.pa-game', { style: `--c:${meta.color}` });
     this.stage = h('div.pa-stage');
     this.scoreEl = h('div.pa-score', { 'aria-live': 'polite' }, '0');
@@ -112,13 +115,17 @@ export class Shell {
     host.resetFx();
     host.game.start(randomSeed(), { demo: true });
     const best = getScores(this.meta.id).best;
-    const picker = this.makePicker();
+    const picker = this.daily ? null : this.makePicker();
+    const official = this.daily ? dailyResults()[this.meta.id] : undefined;
+    const dailyLine = this.daily
+      ? h('div.pa-daily-badge', {}, `DAILY #${dailyNumber()}`, h('small', {}, official ? `Official: ${official.label} · this run is practice` : 'Same seed for everyone today. First run counts.'))
+      : null;
     const playBtn = h('button.btn.primary.play-hint', { type: 'button', onclick: (e: Event) => { e.stopPropagation(); this.play(); } },
       matchMedia('(pointer: coarse)').matches ? 'Tap to play' : 'Click or Space to play');
     this.startEl = h('div.pa-overlay.pa-start', { onpointerdown: (e: Event) => { if (e.target === this.startEl) { e.preventDefault(); this.play(); } } },
       h('h1', {}, this.meta.title),
       h('p.tagline', {}, this.meta.tagline),
-      h('div.best', {}, best == null ? 'No best yet' : `Best ${this.meta.format(best)}`),
+      dailyLine ?? h('div.best', {}, best == null ? 'No best yet' : `Best ${this.meta.format(best)}`),
       picker,
       playBtn,
     );
@@ -146,7 +153,24 @@ export class Shell {
       wrap.append(b);
     }
     this.pick(this.mode);
-    return wrap;
+    const toggles = this.meta.toggles ?? [];
+    if (!toggles.length) return wrap;
+    const box = h('div.pa-toggles');
+    for (const t of toggles) {
+      const key = `${this.meta.id}:opt:${t.id}`;
+      const input = h('input.toggle', {
+        type: 'checkbox', id: `opt-${t.id}`, checked: storage.get<boolean>(key, false),
+        onchange: (e: Event) => storage.set(key, (e.target as HTMLInputElement).checked),
+      });
+      box.append(h('label.pa-toggle', { for: `opt-${t.id}`, onpointerdown: (e: Event) => e.stopPropagation() }, input, t.label));
+    }
+    return h('div', {}, wrap, box);
+  }
+
+  /** The chosen mode plus any enabled start-screen toggles. */
+  private fullMode(): string | undefined {
+    const on = (this.meta.toggles ?? []).filter((t) => storage.get<boolean>(`${this.meta.id}:opt:${t.id}`, false)).map((t) => `+${t.id}`);
+    return this.mode === undefined && !on.length ? undefined : `${this.mode ?? ''}${on.join('')}`;
   }
 
   private pick(id: string | undefined): void {
@@ -183,8 +207,8 @@ export class Shell {
     this.shareText = null; this.shareBtn.classList.remove('show');
     this.score = -1;
     this.setScore(0);
-    this.seed = randomSeed();
-    host.game.start(this.seed, { mode: this.mode });
+    this.seed = this.daily ? dailySeed(this.meta.id) : randomSeed();
+    host.game.start(this.seed, { mode: this.daily ? 'daily' : this.fullMode() });
     this.root.focus?.();
     (document.activeElement as HTMLElement | null)?.blur?.();
   }
@@ -235,6 +259,8 @@ export class Shell {
     if (!host || this.state !== 'dying') return;
     this.state = 'over';
     const rec = recordScore(this.meta.id, r.score);
+    const dailyRec = this.daily ? recordDaily(this.meta.id, r.score, r.dailyLabel ?? this.meta.format(r.score)) : null;
+    const snapshot = this.snapshot();
     this.updateBest();
     host.audio.duck(true);
     this.hud.classList.add('hidden');
@@ -244,18 +270,28 @@ export class Shell {
     const nextBtn = next ? h('button.btn.primary', { type: 'button', onclick: () => this.play(next.mode) }, next.label) : null;
     const retry = h(next ? 'button.btn' : 'button.btn.primary', { type: 'button', onclick: () => this.play() }, 'Retry');
     this.nextMode = next?.mode;
-    const text = r.share ?? `Pocket Arcade - ${this.meta.title}: ${this.meta.format(r.score)} ${this.meta.unit === '%' ? '' : this.meta.unit} | ${gameUrl(this.meta.id)}`.replace('  ', ' ');
+    const titles = Object.fromEntries(GAMES.map((g) => [g.id, g.title]));
+    const text = dailyRec ? dailyShareText(titles)
+      : r.share ?? `Pocket Arcade - ${this.meta.title}: ${this.meta.format(r.score)} ${this.meta.unit === '%' ? '' : this.meta.unit} | ${gameUrl(this.meta.id)}`.replace('  ', ' ');
+    const image = () => void shareCard({
+      title: this.meta.title, color: this.meta.color, score: r.noScore ? (r.rank ?? r.title ?? '') : this.meta.format(r.score),
+      unit: r.noScore || this.meta.unit === '%' ? '' : this.meta.unit,
+      line: rec.isNewBest ? 'NEW BEST!' : r.noScore ? (r.title ?? '') : `Best ${this.meta.format(rec.best)}`,
+      stats: r.stats, url: gameUrl(this.meta.id), daily: this.daily ? `Daily #${dailyNumber()}` : undefined,
+    }, snapshot, text, `pocket-arcade-${this.meta.id}`);
     const panel = h('div.panel', { role: 'dialog', 'aria-label': 'Game over' },
       h('div.headline', {}, r.title ?? 'Game over'),
       r.noScore ? null : big,
       r.noScore || this.meta.unit === '%' ? null : h('div.unit', {}, this.meta.unit),
       r.noScore ? null : rec.isNewBest ? h('div.newbest', {}, 'NEW BEST!') : h('div.bestline', {}, `Best ${this.meta.format(rec.best)}`),
       r.rank ? h('div.rank', {}, r.rank) : null,
+      dailyRec ? h('div.pa-daily-result', {}, dailyRec.official ? `Official daily score: ${dailyRec.entry.label}` : `Practice run · official: ${dailyRec.entry.label}`) : null,
       r.stats.length ? h('div.stats', {}, ...r.stats.map((s) => h('div.stat', {}, h('b', {}, s.value), h('span', {}, s.label)))) : null,
       h(`div.buttons${nextBtn ? '.has-next' : ''}`, {},
         nextBtn,
         retry,
         h('button.btn', { type: 'button', onclick: () => void share(text) }, 'Share'),
+        h('button.btn', { type: 'button', onclick: image, 'aria-label': 'Share image' }, 'Image'),
         h('button.btn', { type: 'button', onclick: () => this.exit() }, 'Hub'),
       ),
       matchMedia('(pointer: fine)').matches ? h('div.kbd-hint', {}, next ? `Enter: ${next.label} · R: retry` : 'Space / Enter / R to retry') : null,
@@ -278,6 +314,16 @@ export class Shell {
       else if (rec.isNewBest) { this.confetti.fire(); host.audio.fanfare(); }
     };
     requestAnimationFrame(step);
+  }
+
+  /** Copy of the final frame for the share card. */
+  private snapshot(): HTMLCanvasElement | null {
+    const src = this.host?.canvas.el;
+    if (!src) return null;
+    const c = document.createElement('canvas');
+    c.width = src.width; c.height = src.height;
+    try { c.getContext('2d')!.drawImage(src, 0, 0); } catch { return null; }
+    return c;
   }
 
   private setScore(n: number): void {

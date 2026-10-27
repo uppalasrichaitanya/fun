@@ -5,6 +5,7 @@ import { Shape } from '../../engine/particles';
 import { Rng } from '../../engine/rng';
 import { C, FONT, rgba } from '../../engine/theme';
 import { ease } from '../../engine/tween';
+import { dailyNumber } from '../../engine/daily';
 import type { Game, GameContext, StartOpts } from '../../engine/types';
 import { Autopilot } from './autopilot';
 import { LEVELS } from './levels';
@@ -49,6 +50,7 @@ class RocketLander implements Game {
   private beepT = 0;
   private flicker = 0;
   private starShow = 0;
+  private daily = false;
 
   init(ctx: GameContext): void {
     this.ctx = ctx;
@@ -61,7 +63,10 @@ class RocketLander implements Game {
     this.rng.seed(seed);
     this.vis.seed(seed ^ 0x77);
     const unlocked = this.ctx.storage.get<number>(unlockKey, 1);
-    this.li = this.demo ? this.rng.int(0, 9) : clamp((Number(opts?.mode) || unlocked) - 1, 0, Math.min(LEVELS.length, unlocked) - 1);
+    this.daily = opts?.mode === 'daily';
+    // Daily: every level is open; the date picks which one.
+    this.li = this.daily ? (dailyNumber() - 1) % LEVELS.length
+      : this.demo ? this.rng.int(0, 9) : clamp((Number(opts?.mode) || unlocked) - 1, 0, Math.min(LEVELS.length, unlocked) - 1);
     this.load();
     this.ctx.audio.music(MUSIC);
   }
@@ -219,10 +224,11 @@ class RocketLander implements Game {
         { label: 'tilt', value: `${((L.tilt * 180) / Math.PI).toFixed(1)}°` },
         { label: 'fuel left', value: fuel },
       ],
-      next: lv.id < LEVELS.length ? { label: 'Next level', mode: String(lv.id + 1) } : undefined,
+      next: lv.id < LEVELS.length && !this.daily ? { label: 'Next level', mode: String(lv.id + 1) } : undefined,
+      dailyLabel: `${'★'.repeat(L.stars)} ${L.score}`,
       share: `Pocket Arcade - Rocket Lander level ${lv.id}: ${'★'.repeat(L.stars)} ${L.score} pts`,
     } : {
-      score: 0, title: 'Crashed!', rank: reason, noScore: true,
+      score: 0, title: 'Crashed!', rank: reason, noScore: true, dailyLabel: 'crashed',
       stats: [
         { label: 'impact speed', value: `${Math.hypot(sim.vx, sim.vy).toFixed(0)} u/s` },
         { label: 'tilt', value: `${((Math.abs(sim.angle) * 180) / Math.PI).toFixed(0)}°` },

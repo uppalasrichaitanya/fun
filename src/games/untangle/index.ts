@@ -47,6 +47,7 @@ class Untangle implements Game {
   private grow: number[] = [];
   // Layout (CSS px).
   private fx = 0; private fy = 0; private size = 1;
+  private daily = 0;
   private demoDot = -1; private demoT = 0; private demoFrom: P = { x: 0, y: 0 }; private demoWait = 0;
 
   init(ctx: GameContext): void {
@@ -81,7 +82,10 @@ class Untangle implements Game {
     this.demo = !!opts?.demo;
     this.rng.seed(seed);
     const unlocked = unlockedLevel(this.ctx.storage);
-    if (this.demo) this.level = this.rng.int(2, 6);
+    // Daily: one knot (level 8 size) seeded by the date, the same for everyone.
+    this.daily = opts?.mode === 'daily' ? seed : 0;
+    if (this.daily) this.level = 8;
+    else if (this.demo) this.level = this.rng.int(2, 6);
     else if (opts?.mode === 'endless') this.level = Math.max(16, unlocked);
     else this.level = clamp(Number(opts?.mode) || unlocked, 1, Math.max(1, unlocked));
     this.load();
@@ -89,7 +93,7 @@ class Untangle implements Game {
   }
 
   private load(): void {
-    this.pz = makePuzzle(this.level);
+    this.pz = makePuzzle(this.level, this.daily);
     this.pos = this.pz.start.map((p) => ({ ...p }));
     this.cross = new Crossings(this.pos, this.pz.edges);
     this.grow = this.pos.map(() => 0);
@@ -198,6 +202,13 @@ class Untangle implements Game {
     [0, 4, 7, 11].forEach((s, i) => audio.tone({ f: pent(s, 262), type: 'sine', a: 0.02, d: 1.6, g: 0.1, at: i * 0.06 }));
     fx.camera.shake(0.05);
     if (this.demo) return;
+    if (this.daily) {
+      this.ctx.shell.gameOver({
+        score: this.level, title: 'Daily knot solved!', noScore: true, dailyLabel: fmtTime(this.time),
+        stats: [{ label: 'time', value: fmtTime(this.time) }, { label: 'moves', value: String(this.moves) }],
+      }, 1700);
+      return;
+    }
     const st = this.ctx.storage;
     if (unlockedLevel(st) <= this.level) st.set('untangle:unlocked', this.level + 1);
     const key = `untangle:lvl:${this.level}`;

@@ -37,6 +37,8 @@ export interface GameMeta {
   chip?: () => string | null;
   /** Start-screen choices (modes or levels). The chosen id reaches the game as `StartOpts.mode`. */
   picker?: () => PickItem[];
+  /** On/off options on the start screen; enabled ones are appended to the mode as "+id". */
+  toggles?: { id: string; label: string }[];
 }
 
 export interface PickItem { id: string; label: string; sub?: string; locked?: boolean }
@@ -59,12 +61,14 @@ export const GAMES: GameMeta[] = [
   {
     id: 'tiny-survivors', title: 'Tiny Survivors', tagline: 'Just move. Your weapons do the rest. Survive 3 minutes.',
     color: '#9B7BFF', group: 'Addictive', controls: ['keys', 'tap'], unit: 'points',
-    canvas: 'fit', hud: 'left', format: int,
+    canvas: 'fill', hud: 'none', format: int,
+    load: () => import('./tiny-survivors'),
   },
   {
     id: 'grapple-swing', title: 'Grapple Swing', tagline: 'Hold to grab. Let go to fly.',
-    color: '#38E1F5', group: 'Addictive', controls: ['tap'], unit: 'm',
-    canvas: 'fit', hud: 'left', format: int,
+    color: '#38E1F5', group: 'Addictive', controls: ['tap', 'mouse', 'keys'], unit: 'm',
+    canvas: 'fill', hud: 'left', format: int,
+    load: () => import('./grapple-swing'),
   },
   {
     id: 'circle', title: 'Draw a Perfect Circle', tagline: 'One stroke. Around the dot. How perfect can you get?',
@@ -147,8 +151,14 @@ export const GAMES: GameMeta[] = [
   {
     id: 'sumo-blobs', title: 'Sumo Blobs', tagline: 'Bump your friend off the platform. First to 3.',
     color: '#FF4F8B', gradient: 'linear-gradient(90deg,#FF4F8B,#38E1F5)',
-    group: 'Play together', controls: ['2p', 'keys'], unit: 'rounds',
-    canvas: 'fit', hud: 'none', format: int,
+    group: 'Play together', controls: ['2p', 'keys', 'tap'], unit: 'rounds',
+    canvas: 'fit', logical: { w: 960, h: 640 }, hud: 'none', format: int,
+    load: () => import('./sumo-blobs'),
+    picker: () => [
+      { id: '2p', label: '2 Players' }, { id: 'easy', label: 'vs CPU', sub: 'easy' },
+      { id: 'normal', label: 'vs CPU', sub: 'normal' }, { id: 'hard', label: 'vs CPU', sub: 'hard' },
+    ],
+    toggles: [{ id: 'chaos', label: 'Chaos power-ups' }],
   },
 ];
 
