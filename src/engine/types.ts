@@ -19,6 +19,10 @@ export interface GameResult {
   title?: string;
   /** Overrides the default share text. */
   share?: string;
+  /** Adds a focused "Next" button that starts the given mode (e.g. the next level). */
+  next?: { label: string; mode: string };
+  /** Hide the score/best block (puzzle results that are not a score). */
+  noScore?: boolean;
 }
 
 export interface ShellHooks {

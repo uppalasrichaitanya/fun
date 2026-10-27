@@ -1,0 +1,1 @@
+{"id":6,"name":"Red Dust","world":"Mars","gravity":150,"w":900,"h":640,"start":{"x":220,"y":100,"vx":0,"vy":0},"wind":{"base":18,"gust":12,"period":4},"terrain":[[0,560],[200,580],[400,560],[520,540],[680,540],[760,520],[900,560]],"pads":[{"x1":520,"x2":680,"y":540,"mult":1}],"hint":"Wind pushes you. Lean into it."}

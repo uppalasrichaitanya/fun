@@ -250,3 +250,13 @@ input[type=range] { accent-color: var(--cyan); width: 150px; }
 .hub-panel { animation: fade .2s ease-out; }
 .hub-panel > section:first-child .grid { margin-top: 18px; }
 .hub-panel > section:first-child .group-label { margin-top: 22px; }
+
+/* ---------- start-screen picker (modes / levels) ---------- */
+.modes .btn.mode { min-height: 44px; padding: 0 18px; font-size: 15px; flex-direction: column; gap: 0; line-height: 1.1; }
+.modes .btn.mode small { font-size: 11px; color: var(--yellow); font-weight: 700; letter-spacing: .06em; }
+.modes .btn.mode[aria-checked="true"] { background: var(--c); color: var(--bg); box-shadow: 0 0 18px color-mix(in srgb, var(--c) 45%, transparent); }
+.modes .btn.mode[aria-checked="true"] small { color: var(--bg); }
+.modes .btn.mode:disabled { opacity: .35; cursor: default; }
+.modes.levels { display: grid; grid-template-columns: repeat(5, 56px); gap: 8px; max-width: 360px; }
+.modes.levels .btn.mode { padding: 0; min-height: 52px; font-family: var(--font-title); font-size: 19px; border-radius: 14px; }
+.pa-over .buttons.has-next { grid-template-columns: 2fr 1fr 1fr 1fr; }

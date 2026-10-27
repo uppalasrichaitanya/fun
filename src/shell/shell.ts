@@ -1,6 +1,7 @@
 import { GameHost } from '../engine/host';
 import { randomSeed } from '../engine/rng';
 import { getScores, recordScore } from '../engine/scores';
+import { storage } from '../engine/storage';
 import type { Game, GameResult, ShellHooks } from '../engine/types';
 import type { GameMeta } from '../games/registry';
 import { engine } from '../engine/audio';
@@ -37,8 +38,11 @@ export class Shell {
   private overTimer = 0;
   private acceptRetryAt = 0;
   private shareText: string | null = null;
+  private nextMode: string | undefined;
   private confetti = new Confetti();
   private seed = randomSeed();
+  private mode: string | undefined;
+  private pickEls: HTMLButtonElement[] = [];
   private disposed = false;
   private off: (() => void)[] = [];
 
@@ -108,12 +112,14 @@ export class Shell {
     host.resetFx();
     host.game.start(randomSeed(), { demo: true });
     const best = getScores(this.meta.id).best;
+    const picker = this.makePicker();
     const playBtn = h('button.btn.primary.play-hint', { type: 'button', onclick: (e: Event) => { e.stopPropagation(); this.play(); } },
       matchMedia('(pointer: coarse)').matches ? 'Tap to play' : 'Click or Space to play');
     this.startEl = h('div.pa-overlay.pa-start', { onpointerdown: (e: Event) => { if (e.target === this.startEl) { e.preventDefault(); this.play(); } } },
       h('h1', {}, this.meta.title),
       h('p.tagline', {}, this.meta.tagline),
       h('div.best', {}, best == null ? 'No best yet' : `Best ${this.meta.format(best)}`),
+      picker,
       playBtn,
     );
     const backBtn = h('button.icon-btn.pa-topleft', { type: 'button', 'aria-label': 'Back to hub', html: ICON.back, onclick: () => this.exit() });
@@ -122,9 +128,44 @@ export class Shell {
     playBtn.focus({ preventScroll: true });
   }
 
-  play(): void {
+  /** Mode / level buttons on the start screen, when the game has them. */
+  private makePicker(): HTMLElement | null {
+    this.pickEls = [];
+    if (!this.meta.picker) return null;
+    const items = this.meta.picker();
+    const saved = storage.get<string | null>(`${this.meta.id}:mode`, null);
+    const open = items.filter((i) => !i.locked);
+    this.mode = (open.find((i) => i.id === saved) ?? open[open.length - 1] ?? items[0])?.id;
+    const wrap = h(`div.modes${items.length > 6 ? '.levels' : ''}`, { role: 'radiogroup', 'aria-label': 'Choose' });
+    for (const it of items) {
+      const b = h('button.btn.mode', {
+        type: 'button', role: 'radio', disabled: !!it.locked, 'data-id': it.id,
+        onclick: (e: Event) => { e.stopPropagation(); if (this.mode === it.id) this.play(); else this.pick(it.id); },
+      }, h('span', {}, it.label), it.sub ? h('small', {}, it.sub) : null);
+      this.pickEls.push(b);
+      wrap.append(b);
+    }
+    this.pick(this.mode);
+    return wrap;
+  }
+
+  private pick(id: string | undefined): void {
+    this.mode = id;
+    for (const b of this.pickEls) b.setAttribute('aria-checked', String(b.dataset.id === id));
+  }
+
+  private stepPick(d: number): void {
+    const open = this.pickEls.filter((b) => !b.disabled);
+    if (!open.length) return;
+    const i = open.findIndex((b) => b.dataset.id === this.mode);
+    this.pick(open[(i + d + open.length) % open.length].dataset.id);
+  }
+
+  play(mode?: string): void {
     const host = this.host;
     if (!host) return;
+    if (mode !== undefined) this.mode = mode;
+    if (this.mode !== undefined) storage.set(`${this.meta.id}:mode`, this.mode);
     engine.unlock();
     clearTimeout(this.overTimer);
     this.startEl?.remove(); this.startEl = null;
@@ -143,7 +184,7 @@ export class Shell {
     this.score = -1;
     this.setScore(0);
     this.seed = randomSeed();
-    host.game.start(this.seed);
+    host.game.start(this.seed, { mode: this.mode });
     this.root.focus?.();
     (document.activeElement as HTMLElement | null)?.blur?.();
   }
@@ -199,25 +240,29 @@ export class Shell {
     this.hud.classList.add('hidden');
 
     const big = h('div.big', {}, this.meta.format(0));
-    const retry = h('button.btn.primary', { type: 'button', onclick: () => this.play() }, 'Retry');
+    const next = r.next;
+    const nextBtn = next ? h('button.btn.primary', { type: 'button', onclick: () => this.play(next.mode) }, next.label) : null;
+    const retry = h(next ? 'button.btn' : 'button.btn.primary', { type: 'button', onclick: () => this.play() }, 'Retry');
+    this.nextMode = next?.mode;
     const text = r.share ?? `Pocket Arcade - ${this.meta.title}: ${this.meta.format(r.score)} ${this.meta.unit === '%' ? '' : this.meta.unit} | ${gameUrl(this.meta.id)}`.replace('  ', ' ');
     const panel = h('div.panel', { role: 'dialog', 'aria-label': 'Game over' },
       h('div.headline', {}, r.title ?? 'Game over'),
-      big,
-      this.meta.unit !== '%' ? h('div.unit', {}, this.meta.unit) : null,
-      rec.isNewBest ? h('div.newbest', {}, 'NEW BEST!') : h('div.bestline', {}, `Best ${this.meta.format(rec.best)}`),
+      r.noScore ? null : big,
+      r.noScore || this.meta.unit === '%' ? null : h('div.unit', {}, this.meta.unit),
+      r.noScore ? null : rec.isNewBest ? h('div.newbest', {}, 'NEW BEST!') : h('div.bestline', {}, `Best ${this.meta.format(rec.best)}`),
       r.rank ? h('div.rank', {}, r.rank) : null,
       r.stats.length ? h('div.stats', {}, ...r.stats.map((s) => h('div.stat', {}, h('b', {}, s.value), h('span', {}, s.label)))) : null,
-      h('div.buttons', {},
+      h(`div.buttons${nextBtn ? '.has-next' : ''}`, {},
+        nextBtn,
         retry,
         h('button.btn', { type: 'button', onclick: () => void share(text) }, 'Share'),
         h('button.btn', { type: 'button', onclick: () => this.exit() }, 'Hub'),
       ),
-      matchMedia('(pointer: fine)').matches ? h('div.kbd-hint', {}, 'Space / Enter / R to retry') : null,
+      matchMedia('(pointer: fine)').matches ? h('div.kbd-hint', {}, next ? `Enter: ${next.label} · R: retry` : 'Space / Enter / R to retry') : null,
     );
     this.overEl = h('div.pa-over.pa-overlay', {}, panel);
     this.root.append(this.overEl);
-    retry.focus({ preventScroll: true });
+    (nextBtn ?? retry).focus({ preventScroll: true });
     this.acceptRetryAt = performance.now() + 180;
 
     // Count the score up with ticks.
@@ -260,6 +305,9 @@ export class Shell {
       case 'start':
         if (code === 'Space' || code === 'Enter') { consume(); this.play(); }
         else if (code === 'Escape') { consume(); this.exit(); }
+        else if (this.pickEls.length && (code === 'ArrowLeft' || code === 'ArrowRight' || code === 'ArrowUp' || code === 'ArrowDown')) {
+          consume(); this.stepPick(code === 'ArrowLeft' || code === 'ArrowUp' ? -1 : 1);
+        }
         break;
       case 'playing':
         if (code === 'Escape' || code === 'KeyP') { consume(); this.pause(); }
@@ -274,7 +322,7 @@ export class Shell {
       case 'over':
         if (code === 'Space' || code === 'Enter' || code === 'KeyR') {
           consume();
-          if (!e.repeat && performance.now() >= this.acceptRetryAt) this.play();
+          if (!e.repeat && performance.now() >= this.acceptRetryAt) this.play(code !== 'KeyR' ? this.nextMode : undefined);
         } else if (code === 'Escape' || code === 'KeyH') { consume(); this.exit(); }
         break;
     }

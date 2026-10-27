@@ -1,0 +1,1 @@
+{"id":1,"name":"First Steps","world":"Moon","gravity":90,"w":800,"h":600,"start":{"x":400,"y":90,"vx":0,"vy":0},"terrain":[[0,520],[120,500],[300,520],[500,520],[680,490],[800,510]],"pads":[{"x1":300,"x2":500,"y":520,"mult":1}],"hint":"Hold thrust to slow down. Land gently."}

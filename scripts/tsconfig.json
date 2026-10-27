@@ -5,5 +5,5 @@
     "target": "ES2022",
     "types": ["node"]
   },
-  "include": [".", "../src/games/bid-war", "../src/engine"]
+  "include": [".", "../src/games/bid-war", "../src/engine", "../src/vite-env.d.ts"]
 }
