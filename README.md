@@ -26,7 +26,8 @@ Deploy `dist/` to any static host (Vercel, Netlify, GitHub Pages). Asset paths a
 | 3 | Grapple Swing, Sumo Blobs, Tiny Survivors, daily challenge, PNG share cards | Built, awaiting playtest |
 | 4 | Bid War (all 6 sub-specs, 3 packs, pack scripts, bot simulator) + hub tabs | Built, awaiting playtest |
 | 5 | Brain Lab shared systems + Light Bender (40), Maze Maker (30 + 10 defence), Wire It (30), Gravity Golf (40) | Built, awaiting playtest |
-| 6-7 | Switchyard, Heist 15, Firebreak, Bridge It, Rocket Builder, Micro Escape | Not started (cards on the hub) |
+| 6 | Switchyard (36 + endless), Heist 15 (36), Firebreak (30), Bridge It (30) | Built, awaiting playtest |
+| 7 | Rocket Builder, Micro Escape | Not started (cards on the hub) |
 
 The hub has three tabs: Arcade, Brain Lab (cards show stars earned, e.g. "27 / 90 stars"), Play Together.
 Games not built yet appear as compact "Coming soon" cards.
@@ -53,7 +54,20 @@ src/engine/editor/   history.ts (100-step undo/redo)  grid.ts (snap placement, d
 src/games/brain-lab.ts      chapter manifest (level select without loading level data)
 src/games/brain-verify.ts   all verifiers; used by scripts/verify-levels.ts and brain-verify.test.ts
 scripts/gen-light-bender.ts  gen-maze-maker.ts (--check re-runs the best-length search)  gen-gravity-golf.ts
+        gen-switchyard.ts (autopilot recording = solution)  gen-heist.ts (time-layered BFS bot)
+        gen-firebreak.ts (annealed tool placement)  gen-bridge-it.ts (cheapest passing template design)
 ```
+
+How each game's stored solutions are made:
+
+| Game | Solution | Generator |
+| --- | --- | --- |
+| Switchyard | Timed switch flips `[t, node, f/h/r]` | Autopilot rollouts; its flip count is par |
+| Heist 15 | Input recording `[frames, bits]` | BFS over (cell, time) with guard/camera/laser safety margins |
+| Firebreak | Tool cells + timed rain drops | Barrier gaps seed a simulated-annealing search |
+| Bridge It | Joints + beams | Templates (deck, over/under truss, cable fans, piers) x depth x material; cheapest that holds a 10% heavier vehicle; budget = cost / 0.6 |
+
+Generators take `--ch N` and/or a level id (e.g. `2-7`) to rebuild just that part.
 
 Levels unlock on 1 star (Maze Maker's defence chapter opens after puzzle 10). Add `?editor` to the URL
 (before the `#`) to unlock everything and get the dev editor panel: paint tools, "build = solution", export JSON.

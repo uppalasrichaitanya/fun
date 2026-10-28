@@ -8,6 +8,7 @@ import { verifier as gravityGolf } from './gravity-golf/verify';
 import { verifier as firebreak } from './firebreak/verify';
 import { verifier as switchyard } from './switchyard/verify';
 import { verifier as heist } from './heist-15/verify';
+import { verifier as bridgeIt } from './bridge-it/verify';
 
 // Every Brain Lab game's headless verifier. Used by `npm run verify-levels` and the unit tests.
 export const VERIFIERS: Verifier<unknown>[] = [
@@ -18,6 +19,7 @@ export const VERIFIERS: Verifier<unknown>[] = [
   firebreak as Verifier<unknown>,
   switchyard as Verifier<unknown>,
   heist as Verifier<unknown>,
+  bridgeIt as Verifier<unknown>,
 ];
 
 export interface LevelReport { game: string; id: string; name: string; solved: boolean; stars: number; deterministic: boolean; note?: string }

@@ -24,6 +24,7 @@ export const BRAIN_CHAPTERS: Record<string, ChapterInfo[]> = {
   'heist-15': [{ title: 'Museum', count: 12 }, { title: 'Bank', count: 12 }, { title: 'Casino', count: 12 }],
   switchyard: [{ title: 'Countryside', count: 12 }, { title: 'City', count: 12 }, { title: 'Mountains', count: 12 }],
   firebreak: [{ title: 'Spring', count: 10 }, { title: 'Summer drought', count: 10 }, { title: 'Autumn storms', count: 10 }],
+  'bridge-it': [{ title: 'River', count: 10 }, { title: 'Canyon', count: 10 }, { title: 'Mountain pass', count: 10 }],
 };
 
 /** Levels that open on something other than the previous level's first star. */

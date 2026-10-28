@@ -65,6 +65,7 @@ const BRAIN_LOADERS: Record<string, () => Promise<{ default: GameFactory }>> = {
   firebreak: () => import('./firebreak'),
   switchyard: () => import('./switchyard'),
   'heist-15': () => import('./heist-15'),
+  'bridge-it': () => import('./bridge-it'),
 };
 
 export const GAMES: GameMeta[] = [
