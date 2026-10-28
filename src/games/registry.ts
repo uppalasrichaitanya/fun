@@ -1,6 +1,6 @@
 import type { CanvasMode } from '../engine/canvas';
 import { levelIds } from '../engine/levels/pack';
-import { Progress } from '../engine/levels/progress';
+import { editorMode as editorModeOn, Progress } from '../engine/levels/progress';
 import { storage } from '../engine/storage';
 import { BRAIN_CHAPTERS, BRAIN_GATES } from './brain-lab';
 import type { GameFactory } from '../engine/types';
@@ -62,6 +62,9 @@ const BRAIN_LOADERS: Record<string, () => Promise<{ default: GameFactory }>> = {
   'maze-maker': () => import('./maze-maker'),
   'wire-it': () => import('./wire-it'),
   'gravity-golf': () => import('./gravity-golf'),
+  firebreak: () => import('./firebreak'),
+  switchyard: () => import('./switchyard'),
+  'heist-15': () => import('./heist-15'),
 };
 
 export const GAMES: GameMeta[] = [
@@ -202,6 +205,11 @@ function brain(id: string, title: string, tagline: string, color: string, contro
     }));
   };
   meta.pickDefault = () => new Progress(id).suggested(ids, gates);
+  if (id === 'switchyard') {
+    // Endless mode opens after level 12.
+    const base = meta.picker;
+    meta.picker = () => [...base(), { id: 'endless', label: '∞', sub: 'endless', group: 'Endless', locked: new Progress(id).stars('1-12') < 1 && !editorModeOn() }];
+  }
   return meta;
 }
 
