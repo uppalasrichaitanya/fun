@@ -1,0 +1,6 @@
+{"title":"Liftoff","levels":[
+{"name":"Hop to 1 km","goal":{"kind":"alt","alt":1000},"budget":90,"parts":["pod","chute","cone","tankS","tankM","tankL","engineS","engineB","fins"],"solution":{"rows":[["chute","",""],["pod","",""],["tankS","",""],["engineS","",""]]}},
+{"name":"Sky high","goal":{"kind":"alt","alt":20000},"budget":100,"parts":["pod","chute","cone","tankS","tankM","tankL","engineS","engineB","fins"],"solution":{"rows":[["chute","",""],["pod","",""],["tankM","",""],["engineS","",""]]}},
+{"name":"Safe return","goal":{"kind":"return","alt":30000},"budget":100,"parts":["pod","chute","cone","tankS","tankM","tankL","engineS","engineB","fins"],"solution":{"rows":[["chute","",""],["pod","",""],["tankM","",""],["engineS","",""]]}},
+{"name":"Touch space","goal":{"kind":"alt","alt":100000},"budget":120,"parts":["pod","chute","cone","tankS","tankM","tankL","engineS","engineB","fins","decoupler","booster"],"solution":{"rows":[["chute","",""],["pod","",""],["tankM","",""],["tankM","",""],["engineS","",""]]}},
+{"name":"Space on a shoestring","goal":{"kind":"alt","alt":100000},"budget":90,"parts":["pod","chute","cone","tankS","tankM","tankL","engineS","engineB","fins","decoupler","booster"],"solution":{"rows":[["chute","",""],["pod","",""],["tankM","",""],["tankM","",""],["engineS","",""]]}}]}

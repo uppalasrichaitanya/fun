@@ -25,6 +25,7 @@ export const BRAIN_CHAPTERS: Record<string, ChapterInfo[]> = {
   switchyard: [{ title: 'Countryside', count: 12 }, { title: 'City', count: 12 }, { title: 'Mountains', count: 12 }],
   firebreak: [{ title: 'Spring', count: 10 }, { title: 'Summer drought', count: 10 }, { title: 'Autumn storms', count: 10 }],
   'bridge-it': [{ title: 'River', count: 10 }, { title: 'Canyon', count: 10 }, { title: 'Mountain pass', count: 10 }],
+  'rocket-builder': [{ title: 'Liftoff', count: 5 }, { title: 'Orbit', count: 5 }, { title: 'The Moon', count: 5 }],
 };
 
 /** Levels that open on something other than the previous level's first star. */

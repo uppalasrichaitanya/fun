@@ -66,6 +66,7 @@ const BRAIN_LOADERS: Record<string, () => Promise<{ default: GameFactory }>> = {
   switchyard: () => import('./switchyard'),
   'heist-15': () => import('./heist-15'),
   'bridge-it': () => import('./bridge-it'),
+  'rocket-builder': () => import('./rocket-builder'),
 };
 
 export const GAMES: GameMeta[] = [
@@ -156,7 +157,7 @@ export const GAMES: GameMeta[] = [
   brain('heist-15', 'Heist 15', "15 seconds. One gem. Don't get seen.", '#FFD93D', ['keys', 'tap'], 108),
   brain('firebreak', 'Firebreak', 'Read the wind. Save the village.', '#FF9F43', ['mouse', 'tap'], 90),
   brain('bridge-it', 'Bridge It', 'Build it cheap. Hope it holds.', '#FF9F43', ['mouse', 'tap'], 90),
-  brain('rocket-builder', 'Rocket Builder', 'Build a rocket. Reach the Moon. Fail gloriously.', '#FF9F43', ['mouse', 'keys'], 45),
+  brain('rocket-builder', 'Rocket Builder', 'Build a rocket. Reach the Moon. Fail gloriously.', '#FF9F43', ['mouse', 'tap', 'keys'], 45),
   brain('micro-escape', 'Micro Escape', 'One room. One trick. Get out.', '#FF9F43', ['mouse', 'tap'], 9),
   // ---- Play together ----
   {
